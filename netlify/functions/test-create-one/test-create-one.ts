@@ -28,16 +28,16 @@ export const handler: Handler = async (event, context) => {
     try {
       requestBody = JSON.parse(event.body)
       const { serviceDeskId, requestTypeId } = requestBody
-      const { email, description, summary } = requestBody.requestFieldValues
+      // Extract field values
+      const { email, description, summary } = requestBody.requestFieldValues || {}
 
       const dataForJSM = {
-        // Use the IDs from the request if provided, otherwise use defaults
-        serviceDeskId: serviceDeskId || "1",
-        requestTypeId: requestTypeId || "10006",
+        // Hardcode service desk ID and request type ID for testing
+        serviceDeskId: "1", // Hardcoded for testing
+        requestTypeId: "10006", // Hardcoded for testing
         requestFieldValues: {
-          summary: summary,
-          description: description
-          // Priority field removed
+          summary: summary || "Support Request",
+          description: description || "No description provided"
         },
       }
 
@@ -46,7 +46,11 @@ export const handler: Handler = async (event, context) => {
       // Send data to JSM
       const auth = Buffer.from(`${process.env.JIRA_API_EMAIL}:${process.env.JIRA_API_KEY}`).toString('base64')
 
-      const response = await fetch(`${process.env.JSM_BASE_URL}/rest/servicedeskapi/request`, {
+      // Log the JSM URL we're using (for debugging, redact in production)
+      const jsmUrl = `${process.env.JSM_BASE_URL}/rest/servicedeskapi/request`
+      console.log('| [1] JSM URL:', jsmUrl)
+
+      const response = await fetch(jsmUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -59,13 +63,13 @@ export const handler: Handler = async (event, context) => {
 
       if (!response.ok) {
         errorMessage = `Error from JSM: ${response.status} ${response.statusText}`
-        console.error('| [0] JSM API Error:', errorMessage, jsmResponse)
+        console.error('| 😳 JSM API Error:', errorMessage, jsmResponse)
       } else {
         console.log('| [1] JSM Response:', jsmResponse)
       }
 
     } catch (error) {
-      console.error('| [0] Error:', error)
+      console.error('| 😳 Error:', error)
       errorMessage = `Error: ${error.message}`
     }
   }
