@@ -31,7 +31,18 @@ export const handler: Handler = async (event, context) => {
       // Extract field values
       const { email, description, summary } = requestBody.requestFieldValues || {}
 
-      const dataForJSM = {
+      // Define JSM request interface to support raiseOnBehalfOf
+      interface JsmRequest {
+        serviceDeskId: number;
+        requestTypeId: number;
+        requestFieldValues: {
+          summary: string;
+          description: string;
+        };
+        raiseOnBehalfOf?: string;
+      }
+
+      const dataForJSM: JsmRequest = {
         // Confirmed values from JSM portal as numbers (not strings):
         // Service Desk ID: 1 (from URL https://digitalblockarea.atlassian.net/servicedesk/customer/portal/1)
         // Request Type IDs: 10006 (Submit a request or incident) or 10007 (Ask a question)
@@ -41,6 +52,13 @@ export const handler: Handler = async (event, context) => {
           summary: summary || "Support Request",
           description: description || "No description provided"
         },
+      }
+
+      // Add raiseOnBehalfOf field if email is provided
+      // This will associate the request with the submitted email address
+      if (email) {
+        dataForJSM.raiseOnBehalfOf = email;
+        console.log(`| 🔄 Creating request on behalf of: ${email}`);
       }
 
       console.log('| 🔄 data for JSM:', dataForJSM)
