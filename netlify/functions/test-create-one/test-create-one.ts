@@ -32,23 +32,25 @@ export const handler: Handler = async (event, context) => {
       const { email, description, summary } = requestBody.requestFieldValues || {}
 
       const dataForJSM = {
-        // Hardcode service desk ID and request type ID for testing
-        serviceDeskId: "1", // Hardcoded for testing
-        requestTypeId: "10006", // Hardcoded for testing
+        // Confirmed values from JSM portal as numbers (not strings):
+        // Service Desk ID: 1 (from URL https://digitalblockarea.atlassian.net/servicedesk/customer/portal/1)
+        // Request Type IDs: 10006 (Submit a request or incident) or 10007 (Ask a question)
+        serviceDeskId: 1, // Confirmed Test JSM service desk ID as number
+        requestTypeId: 10006, // "Submit a request or incident" request type as number
         requestFieldValues: {
           summary: summary || "Support Request",
           description: description || "No description provided"
         },
       }
 
-      console.log('| [1] data for JSM:', dataForJSM)
+      console.log('| 🔄 data for JSM:', dataForJSM)
 
       // Send data to JSM
       const auth = Buffer.from(`${process.env.JIRA_API_EMAIL}:${process.env.JIRA_API_KEY}`).toString('base64')
 
       // Log the JSM URL we're using (for debugging, redact in production)
       const jsmUrl = `${process.env.JSM_BASE_URL}/rest/servicedeskapi/request`
-      console.log('| [1] JSM URL:', jsmUrl)
+      console.log('| 🔄 JSM URL:', jsmUrl)
 
       const response = await fetch(jsmUrl, {
         method: 'POST',
@@ -65,7 +67,7 @@ export const handler: Handler = async (event, context) => {
         errorMessage = `Error from JSM: ${response.status} ${response.statusText}`
         console.error('| 😳 JSM API Error:', errorMessage, jsmResponse)
       } else {
-        console.log('| [1] JSM Response:', jsmResponse)
+        console.log('| ✅ JSM Response:', jsmResponse)
       }
 
     } catch (error) {
