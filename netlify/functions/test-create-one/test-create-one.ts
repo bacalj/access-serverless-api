@@ -30,37 +30,6 @@ export const handler: Handler = async (event, context) => {
     }
   }
 
-  // Test endpoint to get JSM request schema
-  try {
-    // Use the provided environment variables
-    const atlassianDomain = process.env.JSM_BASE_URL
-    const email = process.env.JIRA_API_EMAIL
-    const apiToken = process.env.JIRA_API_KEY
-
-    if (email && apiToken) {
-      const auth = Buffer.from(`${email}:${apiToken}`).toString('base64')
-
-      // Make a GET request to see available service desks first
-      const serviceDesksResponse = await fetch(
-        `https://${atlassianDomain}/rest/servicedeskapi/servicedesk`,
-        {
-          method: 'GET',
-          headers: {
-            'Authorization': `Basic ${auth}`,
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          }
-        }
-      )
-
-      const serviceDesksData = await serviceDesksResponse.json()
-      console.log('| [0] Available service desks:', serviceDesksData)
-
-    }
-  } catch (error) {
-    console.error('| [0] Error accessing JSM API:', error)
-  }
-
   return {
     statusCode: 200,
     headers,
