@@ -5,7 +5,8 @@ export const handler: Handler = async (event, context) => {
   const localEnvVar = process.env.LOCAL_VAL
   const { name = 'stranger' } = event.queryStringParameters || {}
 
-  console.log('| localEnvVar', localEnvVar)
+  console.log('| [0] event', event)
+  console.log('| [0] context', context)
 
   return {
     statusCode: 200,
