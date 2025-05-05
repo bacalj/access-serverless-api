@@ -25,6 +25,17 @@ export const handler: Handler = async (event, context) => {
     try {
       requestBody = JSON.parse(event.body)
       console.log('| [0] Request body:', requestBody)
+      const { serviceDeskId, requestTypeId } = requestBody
+      const { email, description, summary, priority } = requestBody.requestFieldValues
+
+      console.log('| [1] values to pass to JSM:', {
+        'serviceDeskId': serviceDeskId,
+        'requestTypeId': requestTypeId,
+        'email': email,
+        'description': description,
+        'summary': summary,
+        'priority': priority
+      })
     } catch (error) {
       console.error('| [0] Error parsing request body:', error)
     }
