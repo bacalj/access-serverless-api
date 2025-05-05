@@ -28,16 +28,16 @@ export const handler: Handler = async (event, context) => {
     try {
       requestBody = JSON.parse(event.body)
       const { serviceDeskId, requestTypeId } = requestBody
-      const { email, description, summary, priority } = requestBody.requestFieldValues
+      const { email, description, summary } = requestBody.requestFieldValues
 
       const dataForJSM = {
-        // Hardcoding serviceDesk and requestType IDs for test environment
-        serviceDeskId: "1", // serviceDeskId
-        requestTypeId: "10006", // requestTypeId
+        // Use the IDs from the request if provided, otherwise use defaults
+        serviceDeskId: serviceDeskId || "1",
+        requestTypeId: requestTypeId || "10006",
         requestFieldValues: {
           summary: summary,
-          description: description,
-          priority: priority || "Medium"
+          description: description
+          // Priority field removed
         },
       }
 
