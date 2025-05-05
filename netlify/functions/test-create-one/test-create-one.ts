@@ -20,6 +20,17 @@ export const handler: Handler = async (event, context) => {
   const localEnvVar = process.env.LOCAL_VAL
   const { name = 'stranger' } = event.queryStringParameters || {}
 
+  // Parse and log the request body
+  let requestBody = {}
+  if (event.body) {
+    try {
+      requestBody = JSON.parse(event.body)
+      console.log('| [0] Request body:', requestBody)
+    } catch (error) {
+      console.error('| [0] Error parsing request body:', error)
+    }
+  }
+
   console.log('| [0] event', event)
   console.log('| [0] context', context)
 
@@ -27,7 +38,8 @@ export const handler: Handler = async (event, context) => {
     statusCode: 200,
     headers,
     body: JSON.stringify({
-      message: `Hello, ${name}! The local env var is ${localEnvVar}`,
+      message: `Hello, this is a message from the test-create-one function`,
+      receivedData: requestBody
     }),
   }
 }
