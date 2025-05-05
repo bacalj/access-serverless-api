@@ -27,36 +27,18 @@ export const handler: Handler = async (event, context) => {
   if (event.body) {
     try {
       requestBody = JSON.parse(event.body)
-      // Keep the original values, but commented out
-      const { /* serviceDeskId, requestTypeId, */ email, description, summary, priority } = requestBody.requestFieldValues
+      const { serviceDeskId, requestTypeId } = requestBody
+      const { email, description, summary, priority } = requestBody.requestFieldValues
 
       const dataForJSM = {
         // Hardcoding serviceDesk and requestType IDs for test environment
-        serviceDeskId: "1",
-        requestTypeId: "10006",
-        // Dynamic values from request (commented out)
-        // serviceDeskId: serviceDeskId,
-        // requestTypeId: requestTypeId,
-        requestFieldValues: [
-          {
-            fieldId: "summary",
-            value: summary
-          },
-          {
-            fieldId: "description",
-            value: description
-          }
-        ],
-        // Include reporter's email
-        raiseOnBehalfOf: email
-      }
-
-      // Add priority if provided
-      if (priority) {
-        dataForJSM.requestFieldValues.push({
-          fieldId: "priority",
-          value: priority
-        })
+        serviceDeskId: "1", // serviceDeskId
+        requestTypeId: "10006", // requestTypeId
+        requestFieldValues: {
+          summary: summary,
+          description: description,
+          priority: priority || "Medium"
+        },
       }
 
       console.log('| [1] data for JSM:', dataForJSM)
