@@ -4,8 +4,8 @@ export const requestTypeFields: Record<number, Record<string, string>> = {
   10006: {
     summary: 'summary',
     description: 'description',
-    email: 'customfield_10124',
-    accessId: 'customfield_10091'
+    customfield_10124: 'customfield_10124',
+    customfield_10091: 'customfield_10091'
   },
   // Request Type: Question
   10007: {
