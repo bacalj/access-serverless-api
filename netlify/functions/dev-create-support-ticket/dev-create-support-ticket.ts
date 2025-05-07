@@ -4,6 +4,7 @@ import fetch from 'node-fetch'
 import { mapFieldValues } from './dev-field-mapping'
 
 // Define JSM request interface with flexible field values
+// mapping of specific fields to JSM keys is visible in dev-field-mapping
 interface JsmRequest {
   serviceDeskId: number;
   requestTypeId: number;
@@ -36,9 +37,7 @@ export const handler: Handler = async (event, context) => {
       requestBody = JSON.parse(event.body)
       console.log('\n| 🔄 1 netlify recieved request body. Lets look at it:\n', requestBody)
 
-      const serviceDeskId = 1   // note that in prod it is: 2
-      const { requestTypeId } = requestBody
-
+      const { requestTypeId, serviceDeskId } = requestBody
       const userInputValues = requestBody.requestFieldValues || {}
       const formattedFieldValues = mapFieldValues(requestTypeId, userInputValues);
 
@@ -46,10 +45,6 @@ export const handler: Handler = async (event, context) => {
         serviceDeskId,
         requestTypeId,
         requestFieldValues: formattedFieldValues,
-        // TODO: we should use the semantic fields here
-        // e.g. userInputValues.email
-        // in order to do that the client needs to have sent over semantic keys
-        // and the mapping would happen in dev-field-mapping in this repo
         raiseOnBehalfOf: userInputValues.customfield_10124
       }
 
