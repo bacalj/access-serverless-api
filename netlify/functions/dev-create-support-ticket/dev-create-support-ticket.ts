@@ -1,6 +1,7 @@
 import { Handler } from '@netlify/functions'
 // @ts-ignore - handle node-fetch type issue
 import fetch from 'node-fetch'
+import { mapFieldValues } from './dev-field-mapping'
 
 // Define JSM request interface with flexible field values
 interface JsmRequest {
@@ -8,14 +9,6 @@ interface JsmRequest {
   requestTypeId: number;
   requestFieldValues: Record<string, any>;
   raiseOnBehalfOf?: string;
-}
-
-// Define the known fields for support ticket request type
-const supportTicketFields = {
-  summary: 'summary',
-  description: 'description',
-  email: 'email',
-  // Add other fields that are known to work with JSM
 }
 
 export const handler: Handler = async (event, context) => {
@@ -45,16 +38,8 @@ export const handler: Handler = async (event, context) => {
       const serviceDeskId = 1     // in prod will be: 2
       const requestTypeId = 10006 // in prod will be: requestBody.requestTypeId
 
-      // Extract the known fields from the request
-      const formattedFieldValues: Record<string, any> = {}
       const userInputValues = requestBody.requestFieldValues || {}
-
-      // Only include fields that are in our supportTicketFields list
-      Object.keys(supportTicketFields).forEach(fieldKey => {
-        if (userInputValues[fieldKey] !== undefined) {
-          formattedFieldValues[supportTicketFields[fieldKey]] = userInputValues[fieldKey]
-        }
-      })
+      const formattedFieldValues = mapFieldValues(requestTypeId, userInputValues);
 
       const dataForJSM: JsmRequest = {
         serviceDeskId,
