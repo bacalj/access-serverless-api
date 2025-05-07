@@ -36,8 +36,8 @@ export const handler: Handler = async (event, context) => {
       requestBody = JSON.parse(event.body)
       console.log('\n| 🔄 1 netlify recieved request body. Lets look at it:\n', requestBody)
 
-      const serviceDeskId = 1     // in prod will be: 2
-      const requestTypeId = 10006 // in prod will be: requestBody.requestTypeId
+      const serviceDeskId = 1   // note that in prod it is: 2
+      const { requestTypeId } = requestBody
 
       const userInputValues = requestBody.requestFieldValues || {}
       const formattedFieldValues = mapFieldValues(requestTypeId, userInputValues);
