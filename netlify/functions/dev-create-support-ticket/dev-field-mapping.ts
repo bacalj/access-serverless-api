@@ -7,6 +7,7 @@ export const requestTypeFields: Record<number, Record<string, string>> = {
   10006: {
     summary: 'summary',
     description: 'description',
+    // accessId: 'customfield_10091'
   },
   // Request Type: Question
   10007: {
