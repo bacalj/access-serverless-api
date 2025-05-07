@@ -34,6 +34,7 @@ export const handler: Handler = async (event, context) => {
   if (event.body) {
     try {
       requestBody = JSON.parse(event.body)
+      console.log('\n| 🔄 1 netlify recieved request body. Lets look at it:\n', requestBody)
 
       const serviceDeskId = 1     // in prod will be: 2
       const requestTypeId = 10006 // in prod will be: requestBody.requestTypeId
@@ -48,7 +49,7 @@ export const handler: Handler = async (event, context) => {
         raiseOnBehalfOf: userInputValues.email
       }
 
-      console.log('| 🔄 data for JSM:', dataForJSM)
+      console.log('\n| 🔄 2 data mapped and formatted for JSM:\n', dataForJSM)
 
       // Send data to JSM
       const auth = Buffer.from(`${process.env.DEV_JIRA_API_EMAIL}:${process.env.DEV_JIRA_API_KEY}`).toString('base64')
