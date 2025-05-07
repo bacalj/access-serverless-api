@@ -1,13 +1,11 @@
 // Define field mappings for different request types
-// OJO: we don't list `email` as a field becuase in this case its not a field in the JSM type
-// But we do use it to populate raiseOnBehalfOf
-// We may do it differently in prod...
 export const requestTypeFields: Record<number, Record<string, string>> = {
   // Request Type: Support Ticket
   10006: {
     summary: 'summary',
     description: 'description',
-    // accessId: 'customfield_10091'
+    email: 'customfield_10124',
+    accessId: 'customfield_10091'
   },
   // Request Type: Question
   10007: {
