@@ -64,7 +64,7 @@ export const handler: Handler = async (event, context) => {
       console.log('| 🔄 data for JSM:', dataForJSM)
 
       // Send data to JSM
-      const auth = Buffer.from(`${process.env.JIRA_API_EMAIL}:${process.env.JIRA_API_KEY}`).toString('base64')
+      const auth = Buffer.from(`${process.env.DEV_JIRA_API_EMAIL}:${process.env.DEV_JIRA_API_KEY}`).toString('base64')
 
       // Log the JSM URL we're using (for debugging, redact in production)
       const jsmUrl = `${process.env.JSM_BASE_URL}/rest/servicedeskapi/request`

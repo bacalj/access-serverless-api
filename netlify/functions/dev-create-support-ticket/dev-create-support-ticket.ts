@@ -49,9 +49,9 @@ export const handler: Handler = async (event, context) => {
       console.log('| 🔄 data for JSM:', dataForJSM)
 
       // Send data to JSM
-      const auth = Buffer.from(`${process.env.JIRA_API_EMAIL}:${process.env.JIRA_API_KEY}`).toString('base64')
+      const auth = Buffer.from(`${process.env.DEV_JIRA_API_EMAIL}:${process.env.DEV_JIRA_API_KEY}`).toString('base64')
 
-      const response = await fetch(`${process.env.JSM_BASE_URL}/rest/servicedeskapi/request`, {
+      const response = await fetch(`${process.env.DEV_JSM_BASE_URL}/rest/servicedeskapi/request`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
