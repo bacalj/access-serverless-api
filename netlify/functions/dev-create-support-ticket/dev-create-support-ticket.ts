@@ -10,6 +10,14 @@ interface JsmRequest {
   raiseOnBehalfOf?: string;
 }
 
+// Define the known fields for support ticket request type
+const supportTicketFields = {
+  summary: 'summary',
+  description: 'description',
+  email: 'email',
+  // Add other fields that are known to work with JSM
+}
+
 export const handler: Handler = async (event, context) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -37,13 +45,22 @@ export const handler: Handler = async (event, context) => {
       const serviceDeskId = 1     // in prod will be: 2
       const requestTypeId = 10006 // in prod will be: requestBody.requestTypeId
 
+      // Extract the known fields from the request
+      const formattedFieldValues: Record<string, any> = {}
+      const userInputValues = requestBody.requestFieldValues || {}
+
+      // Only include fields that are in our supportTicketFields list
+      Object.keys(supportTicketFields).forEach(fieldKey => {
+        if (userInputValues[fieldKey] !== undefined) {
+          formattedFieldValues[supportTicketFields[fieldKey]] = userInputValues[fieldKey]
+        }
+      })
+
       const dataForJSM: JsmRequest = {
         serviceDeskId,
         requestTypeId,
-        requestFieldValues: {
-          ...(requestBody.requestFieldValues || {})
-        },
-        raiseOnBehalfOf: requestBody.requestFieldValues?.email
+        requestFieldValues: formattedFieldValues,
+        raiseOnBehalfOf: userInputValues.email
       }
 
       console.log('| 🔄 data for JSM:', dataForJSM)
