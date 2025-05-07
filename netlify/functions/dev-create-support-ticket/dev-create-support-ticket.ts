@@ -45,7 +45,7 @@ export const handler: Handler = async (event, context) => {
         serviceDeskId,
         requestTypeId,
         requestFieldValues: formattedFieldValues,
-        raiseOnBehalfOf: userInputValues.customfield_10124
+        raiseOnBehalfOf: userInputValues.email
       }
 
       console.log('\n| 🔄 2 data mapped and formatted for JSM:\n', dataForJSM)
