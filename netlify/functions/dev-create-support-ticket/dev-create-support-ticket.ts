@@ -46,7 +46,11 @@ export const handler: Handler = async (event, context) => {
         serviceDeskId,
         requestTypeId,
         requestFieldValues: formattedFieldValues,
-        raiseOnBehalfOf: userInputValues.email
+        // TODO: we should use the semantic fields here
+        // e.g. userInputValues.email
+        // in order to do that the client needs to have sent over semantic keys
+        // and the mapping would happen in dev-field-mapping in this repo
+        raiseOnBehalfOf: userInputValues.customfield_10124
       }
 
       console.log('\n| 🔄 2 data mapped and formatted for JSM:\n', dataForJSM)
