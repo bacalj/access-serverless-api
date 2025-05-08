@@ -1,6 +1,7 @@
 import { Handler } from '@netlify/functions'
 // @ts-ignore - handle node-fetch type issue
 import fetch from 'node-fetch'
+import FormData from 'form-data'
 import { mapFieldValues } from './dev-field-mapping'
 
 // Define JSM request interface with flexible field values
@@ -10,7 +11,60 @@ interface JsmRequest {
   requestTypeId: number;
   requestFieldValues: Record<string, any>;
   raiseOnBehalfOf?: string;
+  temporaryAttachmentIds?: string[];
 }
+
+// Function to upload a temporary attachment
+const uploadTemporaryAttachment = async (serviceDeskId: number, attachment: {
+  fileName: string;
+  contentType: string;
+  fileData: string;
+  size: number;
+}) => {
+  try {
+    const { fileName, contentType, fileData, size } = attachment;
+
+    // Create form data
+    const form = new FormData();
+
+    // Convert base64 to buffer
+    const fileBuffer = Buffer.from(fileData, 'base64');
+
+    // Add the file to form data
+    form.append('file', fileBuffer, {
+      filename: fileName,
+      contentType: contentType,
+      knownLength: size
+    });
+
+    // Setup authentication
+    const auth = Buffer.from(`${process.env.DEV_JIRA_API_EMAIL}:${process.env.DEV_JIRA_API_KEY}`).toString('base64');
+
+    // Make the API request
+    const response = await fetch(
+      `${process.env.DEV_JSM_BASE_URL}/rest/servicedeskapi/servicedesk/${serviceDeskId}/attachTemporaryFile`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${auth}`,
+          'X-Atlassian-Token': 'nocheck',
+          'X-ExperimentalApi': 'true'
+        },
+        body: form
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`Failed to upload temporary attachment: ${JSON.stringify(errorData)}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error uploading temporary attachment:', error);
+    throw error;
+  }
+};
 
 export const handler: Handler = async (event, context) => {
   const headers = {
@@ -35,17 +89,38 @@ export const handler: Handler = async (event, context) => {
   if (event.body) {
     try {
       requestBody = JSON.parse(event.body)
-      console.log('\n| 🔄 1 netlify recieved request body. Lets look at it:\n', requestBody)
+      console.log('\n| 🔄 1 netlify received request body. Lets look at it:\n', requestBody)
 
       const { requestTypeId, serviceDeskId } = requestBody
       const userInputValues = requestBody.requestFieldValues || {}
       const formattedFieldValues = mapFieldValues(requestTypeId, userInputValues);
 
+      // Step 1: Upload attachments and get temporary IDs
+      const temporaryAttachmentIds: string[] = [];
+      if (requestBody.attachments && Array.isArray(requestBody.attachments)) {
+        for (const attachment of requestBody.attachments) {
+          console.log(`Processing attachment: ${attachment.fileName}`);
+          const uploadResponse = await uploadTemporaryAttachment(serviceDeskId, attachment);
+
+          if (uploadResponse.temporaryAttachments && uploadResponse.temporaryAttachments.length > 0) {
+            const tempIds = uploadResponse.temporaryAttachments.map(att => att.temporaryAttachmentId);
+            temporaryAttachmentIds.push(...tempIds);
+            console.log(`Uploaded temporary attachment: ${attachment.fileName}, ID: ${tempIds[0]}`);
+          }
+        }
+      }
+
+      // Step 2: Create the request with the temporary attachment IDs
       const dataForJSM: JsmRequest = {
         serviceDeskId,
         requestTypeId,
         requestFieldValues: formattedFieldValues,
         raiseOnBehalfOf: userInputValues.email
+      }
+
+      // Add temporary attachment IDs if we have any
+      if (temporaryAttachmentIds.length > 0) {
+        dataForJSM.temporaryAttachmentIds = temporaryAttachmentIds;
       }
 
       console.log('\n| 🔄 2 data mapped and formatted for JSM:\n', dataForJSM)
