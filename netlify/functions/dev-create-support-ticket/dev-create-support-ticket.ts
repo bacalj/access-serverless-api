@@ -114,15 +114,17 @@ export const handler: Handler = async (event, context) => {
       const dataForJSM: JsmRequest = {
         serviceDeskId,
         requestTypeId,
-        requestFieldValues: formattedFieldValues,
+        requestFieldValues: {
+          ...formattedFieldValues,
+          // Add attachments field if we have any temporary IDs
+          ...(temporaryAttachmentIds.length > 0 && {
+            attachment: temporaryAttachmentIds
+          })
+        },
         raiseOnBehalfOf: userInputValues.email
       }
 
-      // Add temporary attachment IDs if we have any
-      if (temporaryAttachmentIds.length > 0) {
-        dataForJSM.temporaryAttachmentIds = temporaryAttachmentIds;
-      }
-
+      // Remove the separate temporaryAttachmentIds field since we're including it in requestFieldValues
       console.log('\n| 🔄 2 data mapped and formatted for JSM:\n', dataForJSM)
 
       // Send data to JSM
