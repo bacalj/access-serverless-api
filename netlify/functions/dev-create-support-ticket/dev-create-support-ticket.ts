@@ -127,6 +127,12 @@ export const handler: Handler = async (event, context) => {
       // Remove the separate temporaryAttachmentIds field since we're including it in requestFieldValues
       console.log('\n| 🔄 2 data mapped and formatted for JSM:\n', dataForJSM)
 
+      // Log environment variable status (safely)
+      console.log('| 🔍 Environment Check:')
+      console.log(`| - DEV_JIRA_API_EMAIL: ${process.env.DEV_JIRA_API_EMAIL ? '✓ Set' : '✗ Missing'}`)
+      console.log(`| - DEV_JIRA_API_KEY: ${process.env.DEV_JIRA_API_KEY ? '✓ Set (length: ' + process.env.DEV_JIRA_API_KEY.length + ')' : '✗ Missing'}`)
+      console.log(`| - DEV_JSM_BASE_URL: ${process.env.DEV_JSM_BASE_URL ? '✓ Set' : '✗ Missing'}`)
+
       // Send data to JSM
       const auth = Buffer.from(`${process.env.DEV_JIRA_API_EMAIL}:${process.env.DEV_JIRA_API_KEY}`).toString('base64')
 
