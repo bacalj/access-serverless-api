@@ -145,11 +145,28 @@ export const handler: Handler = async (event, context) => {
         body: JSON.stringify(dataForJSM)
       })
 
-      jsmResponse = await response.json()
+      // Log the full response status and headers for debugging
+      console.log('| 🔍 Response Status:', response.status)
+      console.log('| 🔍 Response Headers:', JSON.stringify(Object.fromEntries(response.headers.entries())))
+
+      try {
+        jsmResponse = await response.json()
+      } catch (e) {
+        console.error('| 😳 Failed to parse response as JSON:', e)
+        // Try to get the raw text to see what we're actually getting back
+        const rawText = await response.text()
+        console.error('| 😳 Raw response:', rawText)
+        throw new Error(`Failed to parse response: ${rawText}`)
+      }
 
       if (!response.ok) {
         errorMessage = `Error from JSM: ${response.status} ${response.statusText}`
         console.error('| 😳 JSM API Error:', errorMessage, jsmResponse)
+
+        // Check for specific error conditions
+        if (response.status === 401) {
+          console.error('| 🔒 Authentication Error - This could indicate an expired or invalid API token')
+        }
       } else {
         console.log('| ✅ JSM Response:', jsmResponse)
       }
