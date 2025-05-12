@@ -128,10 +128,10 @@ export const handler: Handler = async (event, context) => {
       console.log('\n| 🔄 2 data mapped and formatted for JSM:\n', dataForJSM)
 
       // Log environment variable status (safely)
-      console.log('| 🔍 Environment Check:')
-      console.log(`| - DEV_JIRA_API_EMAIL: ${process.env.DEV_JIRA_API_EMAIL ? '✓ Set' : '✗ Missing'}`)
-      console.log(`| - DEV_JIRA_API_KEY: ${process.env.DEV_JIRA_API_KEY ? '✓ Set (length: ' + process.env.DEV_JIRA_API_KEY.length + ')' : '✗ Missing'}`)
-      console.log(`| - DEV_JSM_BASE_URL: ${process.env.DEV_JSM_BASE_URL ? '✓ Set' : '✗ Missing'}`)
+      // console.log('| 🔍 Environment Check:')
+      // console.log(`| - DEV_JIRA_API_EMAIL: ${process.env.DEV_JIRA_API_EMAIL ? '✓ Set' : '✗ Missing'}`)
+      // console.log(`| - DEV_JIRA_API_KEY: ${process.env.DEV_JIRA_API_KEY ? '✓ Set (length: ' + process.env.DEV_JIRA_API_KEY.length + ')' : '✗ Missing'}`)
+      // console.log(`| - DEV_JSM_BASE_URL: ${process.env.DEV_JSM_BASE_URL ? '✓ Set' : '✗ Missing'}`)
 
       // Send data to JSM
       const auth = Buffer.from(`${process.env.DEV_JIRA_API_EMAIL}:${process.env.DEV_JIRA_API_KEY}`).toString('base64')
@@ -146,8 +146,8 @@ export const handler: Handler = async (event, context) => {
       })
 
       // Log the full response status and headers for debugging
-      console.log('| 🔍 Response Status:', response.status)
-      console.log('| 🔍 Response Headers:', JSON.stringify(Object.fromEntries(response.headers.entries())))
+      // console.log('| 🔍 Response Status:', response.status)
+      // console.log('| 🔍 Response Headers:', JSON.stringify(Object.fromEntries(response.headers.entries())))
 
       try {
         jsmResponse = await response.json()
