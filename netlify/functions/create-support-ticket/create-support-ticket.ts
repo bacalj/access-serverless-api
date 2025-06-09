@@ -121,7 +121,7 @@ export const handler: Handler = async (event, context) => {
             attachment: temporaryAttachmentIds
           })
         },
-        raiseOnBehalfOf: userInputValues.email
+        // raiseOnBehalfOf: userInputValues.email
       }
 
       // Remove the separate temporaryAttachmentIds field since we're including it in requestFieldValues
