@@ -1,0 +1,61 @@
+{
+  "requestTypeFields": [
+    {
+      "fieldId": "customfield_10108",
+      "name": "Your Name",
+      "description": "",
+      "required": true,
+      "defaultValues": [],
+      "validValues": [],
+      "jiraSchema": {
+        "type": "string",
+        "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
+        "customId": 10108
+      },
+      "visible": true
+    },
+    {
+      "fieldId": "customfield_10103",
+      "name": "Your ACCESS ID",
+      "description": "",
+      "required": true,
+      "defaultValues": [],
+      "validValues": [],
+      "jiraSchema": {
+        "type": "string",
+        "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
+        "customId": 10103
+      },
+      "visible": true
+    },
+    {
+      "fieldId": "description",
+      "name": "Description",
+      "description": "Please include the URLs and details of the login issue",
+      "required": true,
+      "defaultValues": [],
+      "validValues": [],
+      "jiraSchema": {
+        "type": "string",
+        "system": "description"
+      },
+      "visible": true
+    },
+    {
+      "fieldId": "attachment",
+      "name": "Attachment",
+      "description": "",
+      "required": false,
+      "defaultValues": [],
+      "validValues": [],
+      "jiraSchema": {
+        "type": "array",
+        "items": "attachment",
+        "system": "attachment"
+      },
+      "visible": true
+    }
+  ],
+  "canRaiseOnBehalfOf": false,
+  "canAddRequestParticipants": true
+}

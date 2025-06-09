@@ -1,0 +1,74 @@
+{
+  "requestTypeFields": [
+    {
+      "fieldId": "summary",
+      "name": "Summary",
+      "description": "",
+      "required": true,
+      "defaultValues": [],
+      "validValues": [],
+      "jiraSchema": {
+        "type": "string",
+        "system": "summary"
+      },
+      "visible": true
+    },
+    {
+      "fieldId": "description",
+      "name": "What are the details of your request?",
+      "description": "",
+      "required": true,
+      "defaultValues": [],
+      "validValues": [],
+      "jiraSchema": {
+        "type": "string",
+        "system": "description"
+      },
+      "visible": true
+    },
+    {
+      "fieldId": "customfield_10091",
+      "name": "Your access ID",
+      "description": "your access id",
+      "required": false,
+      "defaultValues": [],
+      "validValues": [],
+      "jiraSchema": {
+        "type": "string",
+        "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
+        "customId": 10091
+      },
+      "visible": true
+    },
+    {
+      "fieldId": "customfield_10124",
+      "name": "Email",
+      "description": "",
+      "required": false,
+      "defaultValues": [],
+      "validValues": [],
+      "jiraSchema": {
+        "type": "string",
+        "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
+        "customId": 10124
+      },
+      "visible": true
+    },
+    {
+      "fieldId": "attachment",
+      "name": "Attachment",
+      "description": "",
+      "required": false,
+      "defaultValues": [],
+      "validValues": [],
+      "jiraSchema": {
+        "type": "array",
+        "items": "attachment",
+        "system": "attachment"
+      },
+      "visible": true
+    }
+  ],
+  "canRaiseOnBehalfOf": true,
+  "canAddRequestParticipants": true
+}

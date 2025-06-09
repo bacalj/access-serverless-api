@@ -1,0 +1,184 @@
+{
+  "requestTypeFields": [
+    {
+      "fieldId": "customfield_10103",
+      "name": "ACCESSID",
+      "description": "",
+      "required": false,
+      "defaultValues": [],
+      "validValues": [],
+      "jiraSchema": {
+        "type": "string",
+        "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
+        "customId": 10103
+      },
+      "visible": true
+    },
+    {
+      "fieldId": "customfield_10108",
+      "name": "Your Name",
+      "description": "Enter your name",
+      "required": false,
+      "defaultValues": [],
+      "validValues": [],
+      "jiraSchema": {
+        "type": "string",
+        "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
+        "customId": 10108
+      },
+      "visible": true
+    },
+    {
+      "fieldId": "summary",
+      "name": "Summary",
+      "description": "",
+      "required": true,
+      "defaultValues": [],
+      "validValues": [],
+      "jiraSchema": {
+        "type": "string",
+        "system": "summary"
+      },
+      "visible": true
+    },
+    {
+      "fieldId": "customfield_10111",
+      "name": "ACCESS User Support Issue",
+      "description": "",
+      "required": false,
+      "defaultValues": [],
+      "validValues": [
+        {
+          "value": "10212",
+          "label": "User Account Question",
+          "children": []
+        },
+        {
+          "value": "10213",
+          "label": "Allocation Question",
+          "children": []
+        },
+        {
+          "value": "10214",
+          "label": "User Support Question",
+          "children": []
+        },
+        {
+          "value": "10216",
+          "label": "CSSN/CCEP Question",
+          "children": []
+        },
+        {
+          "value": "10217",
+          "label": "Training Question",
+          "children": []
+        },
+        {
+          "value": "10218",
+          "label": "Metrics Question",
+          "children": []
+        },
+        {
+          "value": "10219",
+          "label": "OnDemand Question",
+          "children": []
+        },
+        {
+          "value": "10220",
+          "label": "Pegasus Question",
+          "children": []
+        },
+        {
+          "value": "10221",
+          "label": "XDMOD Question",
+          "children": []
+        },
+        {
+          "value": "10223",
+          "label": "Some Other Question",
+          "children": []
+        }
+      ],
+      "jiraSchema": {
+        "type": "option",
+        "custom": "com.atlassian.jira.plugin.system.customfieldtypes:select",
+        "customId": 10111
+      },
+      "visible": true
+    },
+    {
+      "fieldId": "description",
+      "name": "Description",
+      "description": "",
+      "required": true,
+      "defaultValues": [],
+      "validValues": [],
+      "jiraSchema": {
+        "type": "string",
+        "system": "description"
+      },
+      "visible": true
+    },
+    {
+      "fieldId": "priority",
+      "name": "Priority",
+      "description": "Please select medium, low or lowest priority unless this is an emergency.",
+      "required": false,
+      "defaultValues": [
+        {
+          "value": "3",
+          "label": "Medium",
+          "children": []
+        }
+      ],
+      "validValues": [
+        {
+          "value": "1",
+          "label": "Highest",
+          "children": []
+        },
+        {
+          "value": "2",
+          "label": "High",
+          "children": []
+        },
+        {
+          "value": "3",
+          "label": "Medium",
+          "children": []
+        },
+        {
+          "value": "4",
+          "label": "Low",
+          "children": []
+        },
+        {
+          "value": "5",
+          "label": "Lowest",
+          "children": []
+        }
+      ],
+      "jiraSchema": {
+        "type": "priority",
+        "system": "priority"
+      },
+      "visible": true
+    },
+    {
+      "fieldId": "attachment",
+      "name": "Attachment",
+      "description": "",
+      "required": false,
+      "defaultValues": [],
+      "validValues": [],
+      "jiraSchema": {
+        "type": "array",
+        "items": "attachment",
+        "system": "attachment"
+      },
+      "visible": true
+    }
+  ],
+  "canRaiseOnBehalfOf": false,
+  "canAddRequestParticipants": true
+}

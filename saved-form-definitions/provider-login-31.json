@@ -1,0 +1,171 @@
+{
+  "requestTypeFields": [
+    {
+      "fieldId": "customfield_10108",
+      "name": "Your Name",
+      "description": "",
+      "required": true,
+      "defaultValues": [],
+      "validValues": [],
+      "jiraSchema": {
+        "type": "string",
+        "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
+        "customId": 10108
+      },
+      "visible": true
+    },
+    {
+      "fieldId": "customfield_10103",
+      "name": "Your ACCESS ID",
+      "description": "",
+      "required": true,
+      "defaultValues": [],
+      "validValues": [],
+      "jiraSchema": {
+        "type": "string",
+        "custom": "com.atlassian.jira.plugin.system.customfieldtypes:textfield",
+        "customId": 10103
+      },
+      "visible": true
+    },
+    {
+      "fieldId": "customfield_10110",
+      "name": "ACCESS Resource",
+      "description": "",
+      "required": false,
+      "defaultValues": [],
+      "validValues": [
+        {
+          "value": "10197",
+          "label": "ACES",
+          "children": []
+        },
+        {
+          "value": "10198",
+          "label": "Anvil",
+          "children": []
+        },
+        {
+          "value": "10199",
+          "label": "Bridges-2",
+          "children": []
+        },
+        {
+          "value": "10200",
+          "label": "DARWIN",
+          "children": []
+        },
+        {
+          "value": "10201",
+          "label": "Delta",
+          "children": []
+        },
+        {
+          "value": "10852",
+          "label": "DeltaAI",
+          "children": []
+        },
+        {
+          "value": "10846",
+          "label": "Derecho",
+          "children": []
+        },
+        {
+          "value": "10202",
+          "label": "Expanse",
+          "children": []
+        },
+        {
+          "value": "10203",
+          "label": "FASTER",
+          "children": []
+        },
+        {
+          "value": "10988",
+          "label": "Granite",
+          "children": []
+        },
+        {
+          "value": "10204",
+          "label": "Jetstream2",
+          "children": []
+        },
+        {
+          "value": "10206",
+          "label": "KyRIC",
+          "children": []
+        },
+        {
+          "value": "10853",
+          "label": "Launch",
+          "children": []
+        },
+        {
+          "value": "10718",
+          "label": "Neocortex",
+          "children": []
+        },
+        {
+          "value": "10205",
+          "label": "Ookami",
+          "children": []
+        },
+        {
+          "value": "10210",
+          "label": "Open Science Grid",
+          "children": []
+        },
+        {
+          "value": "10211",
+          "label": "Open Storage Network",
+          "children": []
+        },
+        {
+          "value": "10209",
+          "label": "Ranch",
+          "children": []
+        },
+        {
+          "value": "10784",
+          "label": "Stampede3",
+          "children": []
+        }
+      ],
+      "jiraSchema": {
+        "type": "option",
+        "custom": "com.atlassian.jira.plugin.system.customfieldtypes:select",
+        "customId": 10110
+      },
+      "visible": true
+    },
+    {
+      "fieldId": "description",
+      "name": "Description",
+      "description": "",
+      "required": true,
+      "defaultValues": [],
+      "validValues": [],
+      "jiraSchema": {
+        "type": "string",
+        "system": "description"
+      },
+      "visible": true
+    },
+    {
+      "fieldId": "attachment",
+      "name": "Attachment",
+      "description": "",
+      "required": false,
+      "defaultValues": [],
+      "validValues": [],
+      "jiraSchema": {
+        "type": "array",
+        "items": "attachment",
+        "system": "attachment"
+      },
+      "visible": true
+    }
+  ],
+  "canRaiseOnBehalfOf": false,
+  "canAddRequestParticipants": true
+}
