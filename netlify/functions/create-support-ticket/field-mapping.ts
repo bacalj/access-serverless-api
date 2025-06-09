@@ -24,6 +24,35 @@ export const requestTypeFields: Record<number, Record<string, string>> = {
   },
 }
 
+// Priority mapping - maps user-friendly values to JSM priority IDs/names
+const priorityMapping: Record<string, string> = {
+  'low': '5',
+  'medium': '3',
+  'high': '2',
+  'highest': '1',
+  'lowest': '4',
+  // Also accept numeric strings directly
+  '1': '1',
+  '2': '2',
+  '3': '3',
+  '4': '4',
+  '5': '5'
+};
+
+/**
+ * Maps priority values to JSM format
+ * @param priority The priority value from user input
+ * @returns JSM-compatible priority value
+ */
+function mapPriorityValue(priority: any): string {
+  if (!priority) {
+    return '3'; // Default to medium priority
+  }
+
+  const priorityStr = String(priority).toLowerCase();
+  return priorityMapping[priorityStr] || '3'; // Default to medium if not found
+}
+
 /**
  * Maps user input values to JSM field values based on request type
  * @param requestTypeId The type of request being created
@@ -42,7 +71,14 @@ export function mapFieldValues(requestTypeId: number, userInputValues: Record<st
 
   Object.keys(fieldMapping).forEach(fieldKey => {
     if (userInputValues[fieldKey] !== undefined) {
-      formattedFieldValues[fieldMapping[fieldKey]] = userInputValues[fieldKey];
+      let value = userInputValues[fieldKey];
+
+      // Special handling for priority field
+      if (fieldKey === 'priority') {
+        value = mapPriorityValue(value);
+      }
+
+      formattedFieldValues[fieldMapping[fieldKey]] = value;
     }
   });
 
