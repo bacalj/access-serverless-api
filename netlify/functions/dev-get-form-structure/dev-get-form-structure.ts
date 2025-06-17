@@ -26,8 +26,28 @@ export const handler: Handler = async (event, context) => {
     // Setup authentication
     const auth = Buffer.from(`${process.env.DEV_JIRA_API_EMAIL}:${process.env.DEV_JIRA_API_KEY}`).toString('base64')
 
-    // Make the API request to get form structure
-    const response = await fetch(
+    // First, get the request types for the service desk
+    const requestTypesResponse = await fetch(
+      `${process.env.DEV_JSM_BASE_URL}/rest/servicedeskapi/servicedesk/${serviceDeskId}/requesttype`,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Basic ${auth}`,
+          'Accept': 'application/json'
+        }
+      }
+    )
+
+    if (!requestTypesResponse.ok) {
+      const errorData = await requestTypesResponse.json()
+      throw new Error(`Failed to get request types: ${JSON.stringify(errorData)}`)
+    }
+
+    const requestTypes = await requestTypesResponse.json()
+    console.log('Available request types:', requestTypes)
+
+    // Now try to get the form structure
+    const formResponse = await fetch(
       `https://api.atlassian.com/jira/forms/cloud/${process.env.DEV_JIRA_CLOUD_ID}/servicedesk/TJ/requesttype/${requestTypeId}/form`,
       {
         method: 'GET',
@@ -40,24 +60,25 @@ export const handler: Handler = async (event, context) => {
       }
     )
 
-    if (!response.ok) {
-      const errorData = await response.json()
+    if (!formResponse.ok) {
+      const errorData = await formResponse.json()
       throw new Error(`Failed to get form structure: ${JSON.stringify(errorData)}`)
     }
 
-    const formStructure = await response.json()
+    const formStructure = await formResponse.json()
 
     return {
       statusCode: 200,
       headers,
       body: JSON.stringify({
         message: 'Form structure retrieved successfully',
+        requestTypes,
         formStructure
       })
     }
 
   } catch (error) {
-    console.error('Error getting form structure:', error)
+    console.error('Error:', error)
     return {
       statusCode: 500,
       headers,
