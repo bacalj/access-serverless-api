@@ -21,14 +21,14 @@ export const handler: Handler = async (event, context) => {
   try {
     // Get parameters from query string with defaults
     const serviceDeskId = event.queryStringParameters?.serviceDeskId || '1'
-    const requestTypeId = event.queryStringParameters?.requestTypeId || '10006'
+    const requestTypeId = parseInt(event.queryStringParameters?.requestTypeId || '10006', 10)
 
     // Setup authentication
     const auth = Buffer.from(`${process.env.DEV_JIRA_API_EMAIL}:${process.env.DEV_JIRA_API_KEY}`).toString('base64')
 
-    // First, get the request types for the service desk
-    const requestTypesResponse = await fetch(
-      `${process.env.DEV_JSM_BASE_URL}/rest/servicedeskapi/servicedesk/${serviceDeskId}/requesttype`,
+    // Make the API request to get form structure
+    const response = await fetch(
+      `${process.env.DEV_JSM_BASE_URL}/rest/forms/1.0/servicedesk/${serviceDeskId}/requesttype/${requestTypeId}/form`,
       {
         method: 'GET',
         headers: {
@@ -38,41 +38,18 @@ export const handler: Handler = async (event, context) => {
       }
     )
 
-    if (!requestTypesResponse.ok) {
-      const errorData = await requestTypesResponse.json()
-      throw new Error(`Failed to get request types: ${JSON.stringify(errorData)}`)
-    }
-
-    const requestTypes = await requestTypesResponse.json()
-    console.log('Available request types:', requestTypes)
-
-    // Now try to get the form structure
-    const formResponse = await fetch(
-      `https://api.atlassian.com/jira/forms/cloud/${process.env.DEV_JIRA_CLOUD_ID}/servicedesk/TJ/requesttype/${requestTypeId}/form`,
-      {
-        method: 'GET',
-        headers: {
-          'Authorization': `Basic ${auth}`,
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'X-ExperimentalApi': 'opt-in'
-        }
-      }
-    )
-
-    if (!formResponse.ok) {
-      const errorData = await formResponse.json()
+    if (!response.ok) {
+      const errorData = await response.json()
       throw new Error(`Failed to get form structure: ${JSON.stringify(errorData)}`)
     }
 
-    const formStructure = await formResponse.json()
+    const formStructure = await response.json()
 
     return {
       statusCode: 200,
       headers,
       body: JSON.stringify({
         message: 'Form structure retrieved successfully',
-        requestTypes,
         formStructure
       })
     }
