@@ -20,60 +20,107 @@ export const handler: Handler = async (event, context) => {
 
   try {
     // Get parameters from query string with defaults
-    const serviceDeskId = event.queryStringParameters?.serviceDeskId || 'TJ'
-    const requestTypeId = parseInt(event.queryStringParameters?.requestTypeId || '10006', 10)
+    const serviceDeskId = event.queryStringParameters?.serviceDeskId || '1'
+    const requestTypeId = event.queryStringParameters?.requestTypeId || '10006'
 
-    // Log all relevant information
-    console.log('Environment variables:')
-    console.log('- Cloud ID:', process.env.DEV_JIRA_CLOUD_ID)
-    console.log('- JSM Base URL:', process.env.DEV_JSM_BASE_URL)
-    console.log('Request parameters:')
+    console.log('🔍 Starting discovery with:')
     console.log('- Service Desk ID:', serviceDeskId)
     console.log('- Request Type ID:', requestTypeId)
+    console.log('- JSM Base URL:', process.env.DEV_JSM_BASE_URL)
 
-    const url = `https://api.atlassian.com/jira/forms/cloud/${process.env.DEV_JIRA_CLOUD_ID}/servicedesk/${serviceDeskId}/requesttype/${requestTypeId}/form`
-    console.log('Request URL:', url)
-
-    // Setup authentication
+    // Setup authentication (same as working endpoint)
     const auth = Buffer.from(`${process.env.DEV_JIRA_API_EMAIL}:${process.env.DEV_JIRA_API_KEY}`).toString('base64')
 
-    // Make the API request to get form structure
-    const response = await fetch(
-      url,
-      {
-        method: 'GET',
-        headers: {
-          'Authorization': `Basic ${auth}`,
-          'Accept': 'application/json',
-          'X-ExperimentalApi': 'opt-in'
-        }
-      }
-    )
+    // Try to get request type details first
+    const requestTypeUrl = `${process.env.DEV_JSM_BASE_URL}/rest/servicedeskapi/servicedesk/${serviceDeskId}/requesttype/${requestTypeId}`
+    console.log('🎯 Trying request type URL:', requestTypeUrl)
 
-    if (!response.ok) {
-      const errorData = await response.json()
-      console.error('API Error Response:', errorData)
-      throw new Error(`Failed to get form structure: ${JSON.stringify(errorData)}`)
+    const requestTypeResponse = await fetch(requestTypeUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Basic ${auth}`,
+        'Accept': 'application/json'
+      }
+    })
+
+    console.log('📊 Request Type Response Status:', requestTypeResponse.status)
+
+    if (requestTypeResponse.ok) {
+      const requestTypeData = await requestTypeResponse.json()
+      console.log('✅ Request Type Data:', JSON.stringify(requestTypeData, null, 2))
+    } else {
+      const errorData = await requestTypeResponse.json()
+      console.log('❌ Request Type Error:', JSON.stringify(errorData, null, 2))
     }
 
-    const formStructure = await response.json()
+    // Try to get service desk info
+    const serviceDeskUrl = `${process.env.DEV_JSM_BASE_URL}/rest/servicedeskapi/servicedesk/${serviceDeskId}`
+    console.log('🏢 Trying service desk URL:', serviceDeskUrl)
+
+    const serviceDeskResponse = await fetch(serviceDeskUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Basic ${auth}`,
+        'Accept': 'application/json'
+      }
+    })
+
+    console.log('📊 Service Desk Response Status:', serviceDeskResponse.status)
+
+    if (serviceDeskResponse.ok) {
+      const serviceDeskData = await serviceDeskResponse.json()
+      console.log('✅ Service Desk Data:', JSON.stringify(serviceDeskData, null, 2))
+    } else {
+      const errorData = await serviceDeskResponse.json()
+      console.log('❌ Service Desk Error:', JSON.stringify(errorData, null, 2))
+    }
+
+    // Try to list all request types for this service desk
+    const allRequestTypesUrl = `${process.env.DEV_JSM_BASE_URL}/rest/servicedeskapi/servicedesk/${serviceDeskId}/requesttype`
+    console.log('📋 Trying all request types URL:', allRequestTypesUrl)
+
+    const allRequestTypesResponse = await fetch(allRequestTypesUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Basic ${auth}`,
+        'Accept': 'application/json'
+      }
+    })
+
+    console.log('📊 All Request Types Response Status:', allRequestTypesResponse.status)
+
+    let allRequestTypesData = null
+    if (allRequestTypesResponse.ok) {
+      allRequestTypesData = await allRequestTypesResponse.json()
+      console.log('✅ All Request Types Data:', JSON.stringify(allRequestTypesData, null, 2))
+    } else {
+      const errorData = await allRequestTypesResponse.json()
+      console.log('❌ All Request Types Error:', JSON.stringify(errorData, null, 2))
+    }
 
     return {
       statusCode: 200,
       headers,
       body: JSON.stringify({
-        message: 'Form structure retrieved successfully',
-        formStructure
+        message: 'Discovery complete - check logs for details',
+        summary: {
+          serviceDeskId,
+          requestTypeId,
+          requestTypeFound: requestTypeResponse.ok,
+          serviceDeskFound: serviceDeskResponse.ok,
+          allRequestTypesFound: allRequestTypesResponse.ok,
+          totalRequestTypes: allRequestTypesData?.size || 0
+        }
       })
     }
 
   } catch (error) {
-    console.error('Error:', error)
+    console.error('💥 Discovery Error:', error)
     return {
       statusCode: 500,
       headers,
       body: JSON.stringify({
-        message: 'Error getting form structure',
+        message: 'Discovery failed',
         error: error.message
       })
     }
