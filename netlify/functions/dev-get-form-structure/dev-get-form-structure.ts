@@ -23,9 +23,15 @@ export const handler: Handler = async (event, context) => {
     const serviceDeskId = event.queryStringParameters?.serviceDeskId || '1'
     const requestTypeId = parseInt(event.queryStringParameters?.requestTypeId || '10006', 10)
 
-    // Log cloud ID and constructed URL
-    console.log('Cloud ID:', process.env.DEV_JIRA_CLOUD_ID)
-    const url = `https://api.atlassian.com/jira/forms/cloud/${process.env.DEV_JIRA_CLOUD_ID}/servicedesk/${serviceDeskId}/requesttype/${requestTypeId}/form`
+    // Log all relevant information
+    console.log('Environment variables:')
+    console.log('- Cloud ID:', process.env.DEV_JIRA_CLOUD_ID)
+    console.log('- JSM Base URL:', process.env.DEV_JSM_BASE_URL)
+    console.log('Request parameters:')
+    console.log('- Service Desk ID:', serviceDeskId)
+    console.log('- Request Type ID:', requestTypeId)
+
+    const url = `https://api.atlassian.com/jira/forms/cloud/${process.env.DEV_JIRA_CLOUD_ID}/form/${requestTypeId}`
     console.log('Request URL:', url)
 
     // Setup authentication
@@ -45,6 +51,7 @@ export const handler: Handler = async (event, context) => {
 
     if (!response.ok) {
       const errorData = await response.json()
+      console.error('API Error Response:', errorData)
       throw new Error(`Failed to get form structure: ${JSON.stringify(errorData)}`)
     }
 
