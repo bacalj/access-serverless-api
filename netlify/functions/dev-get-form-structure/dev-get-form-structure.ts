@@ -23,12 +23,17 @@ export const handler: Handler = async (event, context) => {
     const serviceDeskId = event.queryStringParameters?.serviceDeskId || '1'
     const requestTypeId = parseInt(event.queryStringParameters?.requestTypeId || '10006', 10)
 
+    // Log cloud ID and constructed URL
+    console.log('Cloud ID:', process.env.DEV_JIRA_CLOUD_ID)
+    const url = `https://api.atlassian.com/jira/forms/cloud/${process.env.DEV_JIRA_CLOUD_ID}/servicedesk/${serviceDeskId}/requesttype/${requestTypeId}/form`
+    console.log('Request URL:', url)
+
     // Setup authentication
     const auth = Buffer.from(`${process.env.DEV_JIRA_API_EMAIL}:${process.env.DEV_JIRA_API_KEY}`).toString('base64')
 
     // Make the API request to get form structure
     const response = await fetch(
-      `${process.env.DEV_JSM_BASE_URL}/rest/forms/1.0/servicedesk/${serviceDeskId}/requesttype/${requestTypeId}/form`,
+      url,
       {
         method: 'GET',
         headers: {
