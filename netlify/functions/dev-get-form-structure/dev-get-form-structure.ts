@@ -31,7 +31,7 @@ export const handler: Handler = async (event, context) => {
     console.log('- Service Desk ID:', serviceDeskId)
     console.log('- Request Type ID:', requestTypeId)
 
-    const url = `https://api.atlassian.com/jira/forms/cloud/${process.env.DEV_JIRA_CLOUD_ID}/form/${requestTypeId}`
+    const url = `${process.env.DEV_JSM_BASE_URL}/rest/servicedesk/${serviceDeskId}/requesttype/${requestTypeId}/form`
     console.log('Request URL:', url)
 
     // Setup authentication
