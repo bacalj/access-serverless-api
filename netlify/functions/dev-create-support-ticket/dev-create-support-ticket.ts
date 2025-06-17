@@ -21,6 +21,7 @@ const uploadTemporaryAttachment = async (serviceDeskId: number, attachment: {
   fileData: string;
   size: number;
 }) => {
+  console.log('| 🏞️ uploading temporary attachment')
   try {
     const { fileName, contentType, fileData, size } = attachment;
 
