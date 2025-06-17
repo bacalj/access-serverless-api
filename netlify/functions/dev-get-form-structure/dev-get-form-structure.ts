@@ -20,7 +20,7 @@ export const handler: Handler = async (event, context) => {
 
   try {
     // Get parameters from query string with defaults
-    const serviceDeskId = event.queryStringParameters?.serviceDeskId || '1'
+    const serviceDeskId = event.queryStringParameters?.serviceDeskId || 'TJ'
     const requestTypeId = parseInt(event.queryStringParameters?.requestTypeId || '10006', 10)
 
     // Log all relevant information
@@ -44,7 +44,8 @@ export const handler: Handler = async (event, context) => {
         method: 'GET',
         headers: {
           'Authorization': `Basic ${auth}`,
-          'Accept': 'application/json'
+          'Accept': 'application/json',
+          'X-ExperimentalApi': 'opt-in'
         }
       }
     )
