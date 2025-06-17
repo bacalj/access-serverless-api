@@ -28,12 +28,13 @@ export const handler: Handler = async (event, context) => {
 
     // Make the API request to get form structure
     const response = await fetch(
-      `${process.env.DEV_JSM_BASE_URL}/rest/forms/1.0/servicedesk/${serviceDeskId}/requesttype/${requestTypeId}/form`,
+      `https://api.atlassian.com/jira/forms/cloud/${process.env.DEV_JIRA_CLOUD_ID}/servicedesk/${serviceDeskId}/requesttype/${requestTypeId}/form`,
       {
         method: 'GET',
         headers: {
           'Authorization': `Basic ${auth}`,
           'Accept': 'application/json',
+          'Content-Type': 'application/json',
           'X-ExperimentalApi': 'opt-in'
         }
       }
