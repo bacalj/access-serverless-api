@@ -28,7 +28,7 @@ export const handler: Handler = async (event, context) => {
 
     // Make the API request to get form structure
     const response = await fetch(
-      `https://api.atlassian.com/jira/forms/cloud/${process.env.DEV_JIRA_CLOUD_ID}/servicedesk/${serviceDeskId}/requesttype/${requestTypeId}/form`,
+      `https://api.atlassian.com/jira/forms/cloud/${process.env.DEV_JIRA_CLOUD_ID}/servicedesk/TJ/requesttype/${requestTypeId}/form`,
       {
         method: 'GET',
         headers: {
