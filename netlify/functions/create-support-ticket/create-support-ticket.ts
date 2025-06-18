@@ -25,23 +25,27 @@ const submitProFormaFields = async (issueKey: string, proformaFields: any, auth:
     // Step 1: Save form answers using the correct endpoint from Atlassian docs
     const saveAnswersUrl = `https://api.atlassian.com/jira/forms/cloud/${process.env.JIRA_CLOUD_ID}/request/${issueKey}/form/${formId}`
 
-    // Build answers object in the format expected by the API
+    // Build answers object in the format expected by ProForma API
+    // Based on documentation: answers should be objects with specific properties
     const answersPayload = {
       answers: {}
     };
 
-    // Map fields to question IDs (we'll need to discover the correct question format)
+    // Map fields to question IDs with correct ProForma format
     const questionMapping = {
-      5: proformaFields.userIdAtResource,
-      8: proformaFields.resourceName,
-      9: proformaFields.keywords,
-      13: proformaFields.suggestedKeyword
+      5: proformaFields.userIdAtResource,     // User ID at Resource
+      8: proformaFields.resourceName,         // Resource dropdown
+      9: proformaFields.keywords,             // Keywords (multi-select/checkboxes)
+      13: proformaFields.suggestedKeyword     // Suggested Keywords
     };
 
-    // Only include questions that have values
+    // Format answers according to ProForma API specification
     Object.entries(questionMapping).forEach(([questionId, value]) => {
       if (value && value !== '') {
-        answersPayload.answers[questionId] = value;
+        // ProForma expects answers as objects with 'text' property for text fields
+        answersPayload.answers[questionId] = {
+          text: value
+        };
       }
     });
 
