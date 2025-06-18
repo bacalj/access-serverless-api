@@ -27,13 +27,20 @@ const submitProFormaFields = async (issueKey: string, proformaFields: any, auth:
       method: 'GET',
       headers: {
         'Authorization': `Basic ${auth}`,
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'X-ExperimentalApi': 'opt-in'
       }
     });
 
+    if (getFormsResponse.status === 404) {
+      console.log('| ℹ️ No ProForma forms found for this request type - this is normal')
+      console.log('| ℹ️ Request Type 17 (ACCESS User Support) uses traditional JSM fields only')
+      return { success: true, message: 'Request type does not use ProForma forms' }
+    }
+
     if (!getFormsResponse.ok) {
       const getFormsError = await getFormsResponse.json();
-      console.log('| ⚠️ Failed to get forms for issue:', getFormsResponse.status, getFormsError)
+      console.log('| ⚠️ Unexpected error getting forms:', getFormsResponse.status, getFormsError)
       throw new Error(`Failed to get forms: ${getFormsResponse.status} - ${JSON.stringify(getFormsError)}`)
     }
 
@@ -85,7 +92,8 @@ const submitProFormaFields = async (issueKey: string, proformaFields: any, auth:
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Basic ${auth}`,
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'X-ExperimentalApi': 'opt-in'
       },
       body: JSON.stringify(answersPayload)
     });
@@ -107,7 +115,8 @@ const submitProFormaFields = async (issueKey: string, proformaFields: any, auth:
       method: 'PUT',
       headers: {
         'Authorization': `Basic ${auth}`,
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'X-ExperimentalApi': 'opt-in'
       }
     });
 
