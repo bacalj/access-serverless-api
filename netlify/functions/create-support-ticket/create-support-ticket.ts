@@ -19,11 +19,38 @@ const submitProFormaFields = async (issueKey: string, proformaFields: any, auth:
   try {
     console.log('| 📝 Submitting ProForma fields...')
 
-    // Based on the form ID we discovered: 283175d3-f783-4b05-abbb-3e2cd58666d9
-    const formId = '283175d3-f783-4b05-abbb-3e2cd58666d9';
+    // Step 1: Get the correct form ID associated with this issue
+    const getFormsUrl = `https://api.atlassian.com/jira/forms/cloud/${process.env.JIRA_CLOUD_ID}/issue/${issueKey}/form`
+    console.log('| 🔍 Getting forms for issue:', getFormsUrl)
 
-    // Step 1: Save form answers using the correct endpoint from Atlassian docs
-    const saveAnswersUrl = `https://api.atlassian.com/jira/forms/cloud/${process.env.JIRA_CLOUD_ID}/request/${issueKey}/form/${formId}`
+    const getFormsResponse = await fetch(getFormsUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Basic ${auth}`,
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!getFormsResponse.ok) {
+      const getFormsError = await getFormsResponse.json();
+      console.log('| ⚠️ Failed to get forms for issue:', getFormsResponse.status, getFormsError)
+      throw new Error(`Failed to get forms: ${getFormsResponse.status} - ${JSON.stringify(getFormsError)}`)
+    }
+
+    const formsData = await getFormsResponse.json();
+    console.log('| 📋 Forms associated with issue:', JSON.stringify(formsData, null, 2))
+
+    // Find the correct form (should be the ProForma form)
+    if (!formsData || formsData.length === 0) {
+      throw new Error('No forms found associated with this issue')
+    }
+
+    // Use the first form (there should typically be only one ProForma form per issue)
+    const formId = formsData[0].id;
+    console.log('| 🎯 Using form ID:', formId)
+
+    // Step 2: Save form answers using the correct form ID
+    const saveAnswersUrl = `https://api.atlassian.com/jira/forms/cloud/${process.env.JIRA_CLOUD_ID}/issue/${issueKey}/form/${formId}`
 
     // Build answers object in the format expected by ProForma API
     // Based on documentation: answers should be objects with specific properties
@@ -72,8 +99,8 @@ const submitProFormaFields = async (issueKey: string, proformaFields: any, auth:
 
     console.log('| ✅ ProForma answers saved successfully')
 
-    // Step 2: Submit the form (optional - this locks the form)
-    const submitUrl = `https://api.atlassian.com/jira/forms/cloud/${process.env.JIRA_CLOUD_ID}/request/${issueKey}/form/${formId}/action/submit`
+    // Step 3: Submit the form (optional - this locks the form)
+    const submitUrl = `https://api.atlassian.com/jira/forms/cloud/${process.env.JIRA_CLOUD_ID}/issue/${issueKey}/form/${formId}/action/submit`
     console.log('| 🎯 Submit form endpoint:', submitUrl)
 
     const submitResponse = await fetch(submitUrl, {
