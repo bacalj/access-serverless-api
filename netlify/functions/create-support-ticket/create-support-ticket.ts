@@ -14,105 +14,79 @@ interface JsmRequest {
   temporaryAttachmentIds?: string[];
 }
 
-// Function to submit ProForma fields
-const submitProFormaFields = async (serviceDeskId: number, requestTypeId: number, proformaFields: any, auth: string) => {
+// Function to submit ProForma fields using official Atlassian Forms API
+const submitProFormaFields = async (issueKey: string, proformaFields: any, auth: string) => {
   try {
     console.log('| 📝 Submitting ProForma fields...')
 
-    // Try different ProForma API endpoints to find the right one
     // Based on the form ID we discovered: 283175d3-f783-4b05-abbb-3e2cd58666d9
     const formId = '283175d3-f783-4b05-abbb-3e2cd58666d9';
-    const formsApiUrl = `https://api.atlassian.com/jira/forms/cloud/${process.env.JIRA_CLOUD_ID}/form/${formId}/submit`
 
-    // Map fields to ProForma question IDs (based on our earlier discovery)
-    const proformaPayload: {
-      answers: Array<{
-        questionId: number;
-        value: any;
-      }>;
-    } = {
-      answers: []
+    // Step 1: Save form answers using the correct endpoint from Atlassian docs
+    const saveAnswersUrl = `https://api.atlassian.com/jira/forms/cloud/${process.env.JIRA_CLOUD_ID}/request/${issueKey}/form/${formId}`
+
+    // Build answers object in the format expected by the API
+    const answersPayload = {
+      answers: {}
     };
 
-    // Question 5: User ID at Resource -> customfield_10112
-    if (proformaFields.userIdAtResource) {
-      proformaPayload.answers.push({
-        questionId: 5,
-        value: proformaFields.userIdAtResource
-      });
-    }
+    // Map fields to question IDs (we'll need to discover the correct question format)
+    const questionMapping = {
+      5: proformaFields.userIdAtResource,
+      8: proformaFields.resourceName,
+      9: proformaFields.keywords,
+      13: proformaFields.suggestedKeyword
+    };
 
-    // Question 8: Resource -> customfield_10110
-    if (proformaFields.resourceName) {
-      proformaPayload.answers.push({
-        questionId: 8,
-        value: proformaFields.resourceName
-      });
-    }
+    // Only include questions that have values
+    Object.entries(questionMapping).forEach(([questionId, value]) => {
+      if (value && value !== '') {
+        answersPayload.answers[questionId] = value;
+      }
+    });
 
-    // Question 9: Keywords -> customfield_10113
-    if (proformaFields.keywords) {
-      proformaPayload.answers.push({
-        questionId: 9,
-        value: proformaFields.keywords
-      });
-    }
+    console.log('| 🎯 ProForma save answers payload:', JSON.stringify(answersPayload, null, 2))
+    console.log('| 🎯 Save answers endpoint:', saveAnswersUrl)
 
-    // Question 13: Suggested Keyword -> customfield_10115
-    if (proformaFields.suggestedKeyword) {
-      proformaPayload.answers.push({
-        questionId: 13,
-        value: proformaFields.suggestedKeyword
-      });
-    }
-
-        console.log('| 🎯 ProForma payload:', JSON.stringify(proformaPayload, null, 2))
-    console.log('| 🎯 Trying ProForma endpoint:', formsApiUrl)
-
-    const proformaResponse = await fetch(formsApiUrl, {
-      method: 'POST',
+    // Step 1: Save the answers
+    const saveResponse = await fetch(saveAnswersUrl, {
+      method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Basic ${auth}`,
-        'X-ExperimentalApi': 'opt-in'
+        'Accept': 'application/json'
       },
-      body: JSON.stringify(proformaPayload)
+      body: JSON.stringify(answersPayload)
     });
 
-    const proformaResult = await proformaResponse.json();
+    const saveResult = await saveResponse.json();
 
-    if (!proformaResponse.ok) {
-      console.log('| ⚠️ ProForma submission failed:', proformaResponse.status, proformaResult)
+    if (!saveResponse.ok) {
+      console.log('| ⚠️ ProForma save answers failed:', saveResponse.status, saveResult)
+      throw new Error(`ProForma save API error: ${saveResponse.status} - ${JSON.stringify(saveResult)}`)
+    }
 
-      // If 404, maybe try alternative endpoint structure
-      if (proformaResponse.status === 404) {
-        console.log('| 🔄 Trying alternative ProForma endpoint structure...')
-        const altUrl = `${process.env.JSM_BASE_URL}/rest/api/3/form/${formId}/submit`
-        console.log('| 🎯 Alternative endpoint:', altUrl)
+    console.log('| ✅ ProForma answers saved successfully')
 
-        const altResponse = await fetch(altUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Basic ${auth}`,
-            'X-ExperimentalApi': 'opt-in'
-          },
-          body: JSON.stringify(proformaPayload)
-        });
+    // Step 2: Submit the form (optional - this locks the form)
+    const submitUrl = `https://api.atlassian.com/jira/forms/cloud/${process.env.JIRA_CLOUD_ID}/request/${issueKey}/form/${formId}/action/submit`
+    console.log('| 🎯 Submit form endpoint:', submitUrl)
 
-        const altResult = await altResponse.json();
-
-        if (altResponse.ok) {
-          console.log('| ✅ Alternative ProForma endpoint worked:', altResult)
-          return;
-        } else {
-          console.log('| ⚠️ Alternative endpoint also failed:', altResponse.status, altResult)
-        }
+    const submitResponse = await fetch(submitUrl, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Basic ${auth}`,
+        'Accept': 'application/json'
       }
+    });
 
-      throw new Error(`ProForma API error: ${proformaResponse.status} - ${JSON.stringify(proformaResult)}`)
+    const submitResult = await submitResponse.json();
+
+    if (!submitResponse.ok) {
+      console.log('| ⚠️ ProForma submit failed (answers were saved):', submitResponse.status, submitResult)
+      // Don't throw error here - answers were saved successfully
     } else {
-      console.log('| ✅ ProForma submission successful:', proformaResult)
+      console.log('| ✅ ProForma form submitted successfully:', submitResult)
     }
 
   } catch (error) {
@@ -277,7 +251,7 @@ export const handler: Handler = async (event, context) => {
       } else {
         console.log('| ✅ JSM Response:', jsmResponse)
 
-        // Step 3: Try to submit ProForma fields if JSM succeeded and we have ProForma data
+                // Step 3: Try to submit ProForma fields if JSM succeeded and we have ProForma data
         const proformaFields = {
           userIdAtResource: userInputValues.userIdAtResource,
           resourceName: userInputValues.resourceName,
@@ -288,15 +262,16 @@ export const handler: Handler = async (event, context) => {
         // Only attempt ProForma submission if we have at least one ProForma field with data
         const hasProFormaData = Object.values(proformaFields).some(value => value && value !== '');
 
-        if (hasProFormaData) {
+        if (hasProFormaData && jsmResponse?.issueKey) {
           console.log('| 🎯 Attempting ProForma submission with fields:', proformaFields)
+          console.log('| 🎯 Using ticket ID:', jsmResponse.issueKey)
           try {
-            await submitProFormaFields(serviceDeskId, requestTypeId, proformaFields, auth);
+            await submitProFormaFields(jsmResponse.issueKey, proformaFields, auth);
           } catch (proformaError) {
             console.log('| ⚠️ ProForma submission failed (JSM ticket still created):', proformaError.message)
           }
         } else {
-          console.log('| ℹ️ No ProForma data to submit')
+          console.log('| ℹ️ No ProForma data to submit or missing ticket ID')
         }
       }
 
