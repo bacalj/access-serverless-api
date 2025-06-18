@@ -7,7 +7,12 @@ export const requestTypeFields: Record<number, Record<string, string>> = {
     accessId: 'customfield_10103',
     userName: 'customfield_10108',
     issueType: 'customfield_10111',
-    priority: 'priority'
+    priority: 'priority',
+    // ProForma-linked fields
+    userIdAtResource: 'customfield_10112',    // Question 5: Your User ID (at the Resource)
+    resourceName: 'customfield_10110',        // Question 8: Resource
+    keywords: 'customfield_10113',            // Question 9: Keywords
+    suggestedKeyword: 'customfield_10115'     // Question 13: Suggested Keyword
   },
   // Request Type: Login to Access (loginAccess)
   30: {
