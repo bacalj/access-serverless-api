@@ -2,6 +2,11 @@ import { Handler } from '@netlify/functions'
 // @ts-ignore - handle node-fetch type issue
 import fetch from 'node-fetch'
 
+interface FieldChoice {
+  label: string;   // Human-readable display text
+  value: string;   // API value/ID to submit
+}
+
 interface HumanReadableField {
   label: string;
   description: string;
@@ -9,7 +14,7 @@ interface HumanReadableField {
   source: 'jsm' | 'proforma';
   fieldId?: string;
   questionId?: string;
-  choices?: string[];
+  choices?: FieldChoice[];
   required?: boolean;
   // Additional mapping data
   semanticKey?: string; // Suggested semantic key for frontend mapping
@@ -121,11 +126,14 @@ export const handler: Handler = async (event, context) => {
              jiraSchema: field.jiraSchema
            }
 
-           // Add choices for select fields (filter out unnecessary metadata)
+           // Add choices for select fields (include both label and value)
            if (field.validValues && Array.isArray(field.validValues)) {
              humanField.choices = field.validValues
-               .map(v => v.value || v.name || String(v))
-               .filter(choice => choice && choice.trim() !== '')
+               .map(v => ({
+                 label: v.value || v.name || String(v),
+                 value: v.id || v.value || v.name || String(v)
+               }))
+               .filter(choice => choice.label && choice.label.trim() !== '')
            }
 
            // Only include if it has useful information
@@ -143,9 +151,12 @@ export const handler: Handler = async (event, context) => {
       console.log('❌ Failed to fetch JSM fields:', jsmFieldsResponse.status)
     }
 
-    // Step 3: Get ProForma fields
+        // Step 3: Get ProForma fields
     console.log('📋 Fetching ProForma fields...')
+    console.log('- Cloud ID:', process.env.JIRA_CLOUD_ID)
     const formsApiUrl = `https://api.atlassian.com/jira/forms/cloud/${process.env.JIRA_CLOUD_ID}/servicedesk/${serviceDeskId}/requesttype/${requestTypeId}/form`
+    console.log('🎯 ProForma API URL:', formsApiUrl)
+
     const formsResponse = await fetch(formsApiUrl, {
       method: 'GET',
       headers: {
@@ -155,45 +166,61 @@ export const handler: Handler = async (event, context) => {
       }
     })
 
+    console.log('📊 ProForma Response Status:', formsResponse.status)
+
     if (formsResponse.ok) {
       const formsData = await formsResponse.json()
-      console.log('✅ ProForma form received')
+      console.log('✅ ProForma form received:', JSON.stringify(formsData, null, 2))
 
-             // Process ProForma questions
-       if (formsData.questions && Array.isArray(formsData.questions)) {
-         for (const question of formsData.questions) {
-           const humanField: HumanReadableField = {
-             label: question.label || `Question ${question.id}`,
-             description: cleanDescription(question.description) || question.label || `ProForma question ${question.id}`,
-             type: mapProFormaQuestionType(question.type),
-             source: 'proforma',
-             questionId: question.id,
-             required: question.required || false,
-             semanticKey: generateSemanticKey(question.label || `question_${question.id}`, 'proforma')
-           }
+      // Process ProForma questions
+      if (formsData.questions && Array.isArray(formsData.questions)) {
+        console.log(`Processing ${formsData.questions.length} ProForma questions`)
+        for (const question of formsData.questions) {
+          const humanField: HumanReadableField = {
+            label: question.label || `Question ${question.id}`,
+            description: cleanDescription(question.description) || question.label || `ProForma question ${question.id}`,
+            type: mapProFormaQuestionType(question.type),
+            source: 'proforma',
+            questionId: question.id,
+            required: question.required || false,
+            semanticKey: generateSemanticKey(question.label || `question_${question.id}`, 'proforma')
+          }
 
-           // Add choices for choice questions (filter out unnecessary metadata)
-           if (question.choices && Array.isArray(question.choices)) {
-             humanField.choices = question.choices
-               .map(choice => choice.label || choice.value || String(choice))
-               .filter(choice => choice && choice.trim() !== '')
-           }
+          // Add choices for choice questions (include both label and value)
+          if (question.choices && Array.isArray(question.choices)) {
+            humanField.choices = question.choices
+              .map(choice => ({
+                label: choice.label || choice.value || String(choice),
+                value: choice.value || choice.id || choice.label || String(choice)
+              }))
+              .filter(choice => choice.label && choice.label.trim() !== '')
+            console.log(`Question ${question.id} has ${humanField.choices.length} choices`)
+          }
 
-           // Only include if it has useful information
-           if (humanField.label && humanField.label.trim() !== '') {
-             // Categorize ProForma fields as required or optional
-             if (humanField.required) {
-               documentation.proformaFields.required.push(humanField)
-             } else {
-               documentation.proformaFields.optional.push(humanField)
-             }
-           }
-         }
-       }
+          // Only include if it has useful information
+          if (humanField.label && humanField.label.trim() !== '') {
+            // Categorize ProForma fields as required or optional
+            if (humanField.required) {
+              documentation.proformaFields.required.push(humanField)
+            } else {
+              documentation.proformaFields.optional.push(humanField)
+            }
+            console.log(`Added ProForma field: ${humanField.label} (${humanField.required ? 'required' : 'optional'})`)
+          }
+        }
+      } else {
+        console.log('❌ No questions found in ProForma response or questions is not an array')
+        console.log('ProForma data structure:', Object.keys(formsData))
+      }
     } else {
       console.log('❌ Failed to fetch ProForma fields:', formsResponse.status)
-      const errorData = await formsResponse.json()
-      console.log('Error details:', errorData)
+      try {
+        const errorData = await formsResponse.json()
+        console.log('Error details:', JSON.stringify(errorData, null, 2))
+      } catch (e) {
+        const errorText = await formsResponse.text()
+        console.log('Error text:', errorText)
+      }
     }
 
     // Step 4: Return formatted documentation with summary
