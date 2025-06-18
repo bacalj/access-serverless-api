@@ -103,13 +103,16 @@ export const handler: Handler = async (event, context) => {
       }
     })
 
+    let rawJsmFieldsData = null
+    let jsmError = null
+
     if (jsmFieldsResponse.ok) {
-      const jsmFieldsData = await jsmFieldsResponse.json()
-      console.log('✅ JSM Fields received:', jsmFieldsData.requestTypeFields?.length || 0, 'fields')
+      rawJsmFieldsData = await jsmFieldsResponse.json()
+      console.log('✅ JSM Fields received:', rawJsmFieldsData.requestTypeFields?.length || 0, 'fields')
 
              // Process JSM fields
-       if (jsmFieldsData.requestTypeFields) {
-         for (const field of jsmFieldsData.requestTypeFields) {
+       if (rawJsmFieldsData.requestTypeFields) {
+         for (const field of rawJsmFieldsData.requestTypeFields) {
            // Skip fields we don't need (like attachment fields that are handled separately)
            if (field.fieldId === 'attachment') {
              continue;
@@ -149,9 +152,14 @@ export const handler: Handler = async (event, context) => {
        }
     } else {
       console.log('❌ Failed to fetch JSM fields:', jsmFieldsResponse.status)
+      try {
+        jsmError = await jsmFieldsResponse.json()
+      } catch (e) {
+        jsmError = await jsmFieldsResponse.text()
+      }
     }
 
-        // Step 3: Get ProForma fields
+            // Step 3: Get ProForma fields - RAW DATA FOR INSPECTION
     console.log('📋 Fetching ProForma fields...')
     console.log('- Cloud ID:', process.env.JIRA_CLOUD_ID)
     const formsApiUrl = `https://api.atlassian.com/jira/forms/cloud/${process.env.JIRA_CLOUD_ID}/servicedesk/${serviceDeskId}/requesttype/${requestTypeId}/form`
@@ -168,58 +176,18 @@ export const handler: Handler = async (event, context) => {
 
     console.log('📊 ProForma Response Status:', formsResponse.status)
 
+    let rawProFormaData = null
+    let proFormaError = null
+
     if (formsResponse.ok) {
-      const formsData = await formsResponse.json()
-      console.log('✅ ProForma form received:', JSON.stringify(formsData, null, 2))
-
-      // Process ProForma questions
-      if (formsData.questions && Array.isArray(formsData.questions)) {
-        console.log(`Processing ${formsData.questions.length} ProForma questions`)
-        for (const question of formsData.questions) {
-          const humanField: HumanReadableField = {
-            label: question.label || `Question ${question.id}`,
-            description: cleanDescription(question.description) || question.label || `ProForma question ${question.id}`,
-            type: mapProFormaQuestionType(question.type),
-            source: 'proforma',
-            questionId: question.id,
-            required: question.required || false,
-            semanticKey: generateSemanticKey(question.label || `question_${question.id}`, 'proforma')
-          }
-
-          // Add choices for choice questions (include both label and value)
-          if (question.choices && Array.isArray(question.choices)) {
-            humanField.choices = question.choices
-              .map(choice => ({
-                label: choice.label || choice.value || String(choice),
-                value: choice.value || choice.id || choice.label || String(choice)
-              }))
-              .filter(choice => choice.label && choice.label.trim() !== '')
-            console.log(`Question ${question.id} has ${humanField.choices.length} choices`)
-          }
-
-          // Only include if it has useful information
-          if (humanField.label && humanField.label.trim() !== '') {
-            // Categorize ProForma fields as required or optional
-            if (humanField.required) {
-              documentation.proformaFields.required.push(humanField)
-            } else {
-              documentation.proformaFields.optional.push(humanField)
-            }
-            console.log(`Added ProForma field: ${humanField.label} (${humanField.required ? 'required' : 'optional'})`)
-          }
-        }
-      } else {
-        console.log('❌ No questions found in ProForma response or questions is not an array')
-        console.log('ProForma data structure:', Object.keys(formsData))
-      }
+      rawProFormaData = await formsResponse.json()
+      console.log('✅ ProForma form received - returning raw data for inspection')
     } else {
       console.log('❌ Failed to fetch ProForma fields:', formsResponse.status)
       try {
-        const errorData = await formsResponse.json()
-        console.log('Error details:', JSON.stringify(errorData, null, 2))
+        proFormaError = await formsResponse.json()
       } catch (e) {
-        const errorText = await formsResponse.text()
-        console.log('Error text:', errorText)
+        proFormaError = await formsResponse.text()
       }
     }
 
@@ -245,15 +213,28 @@ export const handler: Handler = async (event, context) => {
         jsm: {
           total: totalJsm,
           required: documentation.jsmFields.required.length,
-          optional: documentation.jsmFields.optional.length
+          optional: documentation.jsmFields.optional.length,
+          apiStatus: rawJsmFieldsData ? 'success' : 'failed'
         },
         proforma: {
           total: totalProforma,
           required: documentation.proformaFields.required.length,
-          optional: documentation.proformaFields.optional.length
+          optional: documentation.proformaFields.optional.length,
+          apiStatus: rawProFormaData ? 'success' : 'failed'
         }
       },
-      documentation
+      documentation,
+      // RAW DATA FOR INSPECTION
+      rawApiData: {
+        jsm: {
+          data: rawJsmFieldsData,
+          error: jsmError
+        },
+        proforma: {
+          data: rawProFormaData,
+          error: proFormaError
+        }
+      }
     }
 
     return {
