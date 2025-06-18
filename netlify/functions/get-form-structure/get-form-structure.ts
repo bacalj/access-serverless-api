@@ -20,8 +20,8 @@ export const handler: Handler = async (event, context) => {
 
   try {
     // Get parameters from query string with defaults
-    const serviceDeskId = event.queryStringParameters?.serviceDeskId || '1'
-    const requestTypeId = event.queryStringParameters?.requestTypeId || '10006'
+    const serviceDeskId = event.queryStringParameters?.serviceDeskId || '2'
+    const requestTypeId = event.queryStringParameters?.requestTypeId || '17'
 
     console.log('🔍 Starting ProForma discovery with:')
     console.log('- Service Desk ID:', serviceDeskId)
