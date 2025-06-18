@@ -92,12 +92,16 @@ export const handler: Handler = async (event, context) => {
       }
     })
 
-    let rawJsmFieldsData = null
-    let jsmError = null
+    let rawJsmFieldsData: any = null
+    let jsmError: any = null
 
     if (jsmFieldsResponse.ok) {
-            rawJsmFieldsData = await jsmFieldsResponse.json()
-      console.log('✅ JSM Fields received:', rawJsmFieldsData.requestTypeFields?.length || 0, 'fields')
+      rawJsmFieldsData = await jsmFieldsResponse.json()
+      if (rawJsmFieldsData !== null) {
+        console.log('✅ JSM Fields received:', rawJsmFieldsData?.requestTypeFields?.length || 0, 'fields')
+      } else {
+        console.log('❌ JSM Fields received:', rawJsmFieldsData)
+      }
     } else {
       console.log('❌ Failed to fetch JSM fields:', jsmFieldsResponse.status)
       try {
@@ -124,8 +128,8 @@ export const handler: Handler = async (event, context) => {
 
     console.log('📊 ProForma Response Status:', formsResponse.status)
 
-    let rawProFormaData = null
-    let proFormaError = null
+    let rawProFormaData: any = null
+    let proFormaError: any = null
 
     if (formsResponse.ok) {
       rawProFormaData = await formsResponse.json()
@@ -139,8 +143,10 @@ export const handler: Handler = async (event, context) => {
       }
     }
 
+
+
         // Step 4: Return simplified response with just summary and raw data
-    console.log('✅ API calls complete!')
+    console.log('✅ API calls complete.  Here is data we can use to build the field documentation!')
     console.log(`- JSM API: ${rawJsmFieldsData ? 'success' : 'failed'}`)
     console.log(`- ProForma API: ${rawProFormaData ? 'success' : 'failed'}`)
 
