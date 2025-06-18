@@ -23,19 +23,42 @@ export const handler: Handler = async (event, context) => {
     const serviceDeskId = event.queryStringParameters?.serviceDeskId || '1'
     const requestTypeId = event.queryStringParameters?.requestTypeId || '10006'
 
-    console.log('🔍 Starting discovery with:')
+    console.log('🔍 Starting ProForma discovery with:')
     console.log('- Service Desk ID:', serviceDeskId)
     console.log('- Request Type ID:', requestTypeId)
-    console.log('- JSM Base URL:', process.env.DEV_JSM_BASE_URL)
+    console.log('- Cloud ID:', process.env.JIRA_CLOUD_ID)
 
-    // Setup authentication (same as working endpoint)
-    const auth = Buffer.from(`${process.env.DEV_JIRA_API_EMAIL}:${process.env.DEV_JIRA_API_KEY}`).toString('base64')
+    // Setup authentication for production
+    const auth = Buffer.from(`${process.env.JIRA_API_EMAIL}:${process.env.JIRA_API_KEY}`).toString('base64')
 
-    // Try to get request type details first
-    const requestTypeUrl = `${process.env.DEV_JSM_BASE_URL}/rest/servicedeskapi/servicedesk/${serviceDeskId}/requesttype/${requestTypeId}`
-    console.log('🎯 Trying request type URL:', requestTypeUrl)
+    // Try the Forms API endpoint for ProForma forms
+    const formsApiUrl = `https://api.atlassian.com/jira/forms/cloud/${process.env.JIRA_CLOUD_ID}/servicedesk/${serviceDeskId}/requesttype/${requestTypeId}/form`
+    console.log('🎯 Trying Forms API URL:', formsApiUrl)
 
-    const requestTypeResponse = await fetch(requestTypeUrl, {
+    const formsResponse = await fetch(formsApiUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Basic ${auth}`,
+        'Accept': 'application/json',
+        'X-ExperimentalApi': 'opt-in'
+      }
+    })
+
+    console.log('📊 Forms API Response Status:', formsResponse.status)
+
+    if (formsResponse.ok) {
+      const formsData = await formsResponse.json()
+      console.log('✅ Forms API Data:', JSON.stringify(formsData, null, 2))
+    } else {
+      const errorData = await formsResponse.json()
+      console.log('❌ Forms API Error:', JSON.stringify(errorData, null, 2))
+    }
+
+    // Also try the regular JSM API for comparison
+    const jsmApiUrl = `${process.env.JSM_BASE_URL}/rest/servicedeskapi/servicedesk/${serviceDeskId}/requesttype/${requestTypeId}`
+    console.log('🏢 Trying JSM API URL for comparison:', jsmApiUrl)
+
+    const jsmResponse = await fetch(jsmApiUrl, {
       method: 'GET',
       headers: {
         'Authorization': `Basic ${auth}`,
@@ -43,40 +66,18 @@ export const handler: Handler = async (event, context) => {
       }
     })
 
-    console.log('📊 Request Type Response Status:', requestTypeResponse.status)
+    console.log('📊 JSM API Response Status:', jsmResponse.status)
 
-    if (requestTypeResponse.ok) {
-      const requestTypeData = await requestTypeResponse.json()
-      console.log('✅ Request Type Data:', JSON.stringify(requestTypeData, null, 2))
+    if (jsmResponse.ok) {
+      const jsmData = await jsmResponse.json()
+      console.log('✅ JSM API Data:', JSON.stringify(jsmData, null, 2))
     } else {
-      const errorData = await requestTypeResponse.json()
-      console.log('❌ Request Type Error:', JSON.stringify(errorData, null, 2))
+      const errorData = await jsmResponse.json()
+      console.log('❌ JSM API Error:', JSON.stringify(errorData, null, 2))
     }
 
-    // Try to get service desk info
-    const serviceDeskUrl = `${process.env.DEV_JSM_BASE_URL}/rest/servicedeskapi/servicedesk/${serviceDeskId}`
-    console.log('🏢 Trying service desk URL:', serviceDeskUrl)
-
-    const serviceDeskResponse = await fetch(serviceDeskUrl, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Basic ${auth}`,
-        'Accept': 'application/json'
-      }
-    })
-
-    console.log('📊 Service Desk Response Status:', serviceDeskResponse.status)
-
-    if (serviceDeskResponse.ok) {
-      const serviceDeskData = await serviceDeskResponse.json()
-      console.log('✅ Service Desk Data:', JSON.stringify(serviceDeskData, null, 2))
-    } else {
-      const errorData = await serviceDeskResponse.json()
-      console.log('❌ Service Desk Error:', JSON.stringify(errorData, null, 2))
-    }
-
-    // Try to list all request types for this service desk
-    const allRequestTypesUrl = `${process.env.DEV_JSM_BASE_URL}/rest/servicedeskapi/servicedesk/${serviceDeskId}/requesttype`
+    // Try to get all request types to see what's available
+    const allRequestTypesUrl = `${process.env.JSM_BASE_URL}/rest/servicedeskapi/servicedesk/${serviceDeskId}/requesttype`
     console.log('📋 Trying all request types URL:', allRequestTypesUrl)
 
     const allRequestTypesResponse = await fetch(allRequestTypesUrl, {
@@ -102,12 +103,12 @@ export const handler: Handler = async (event, context) => {
       statusCode: 200,
       headers,
       body: JSON.stringify({
-        message: 'Discovery complete - check logs for details',
+        message: 'ProForma discovery complete - check logs for details',
         summary: {
           serviceDeskId,
           requestTypeId,
-          requestTypeFound: requestTypeResponse.ok,
-          serviceDeskFound: serviceDeskResponse.ok,
+          formsApiWorking: formsResponse.ok,
+          jsmApiWorking: jsmResponse.ok,
           allRequestTypesFound: allRequestTypesResponse.ok,
           totalRequestTypes: allRequestTypesData?.size || 0
         }
@@ -115,12 +116,12 @@ export const handler: Handler = async (event, context) => {
     }
 
   } catch (error) {
-    console.error('💥 Discovery Error:', error)
+    console.error('💥 ProForma Discovery Error:', error)
     return {
       statusCode: 500,
       headers,
       body: JSON.stringify({
-        message: 'Discovery failed',
+        message: 'ProForma discovery failed',
         error: error.message
       })
     }
