@@ -14,6 +14,83 @@ interface JsmRequest {
   temporaryAttachmentIds?: string[];
 }
 
+// Function to submit ProForma fields
+const submitProFormaFields = async (serviceDeskId: number, requestTypeId: number, proformaFields: any, auth: string) => {
+  try {
+    console.log('| 📝 Submitting ProForma fields...')
+
+    // Use the Forms API to submit additional fields
+    const formsApiUrl = `https://api.atlassian.com/jira/forms/cloud/${process.env.JIRA_CLOUD_ID}/servicedesk/${serviceDeskId}/requesttype/${requestTypeId}/form/submit`
+
+    // Map fields to ProForma question IDs (based on our earlier discovery)
+    const proformaPayload: {
+      answers: Array<{
+        questionId: number;
+        value: any;
+      }>;
+    } = {
+      answers: []
+    };
+
+    // Question 5: User ID at Resource -> customfield_10112
+    if (proformaFields.userIdAtResource) {
+      proformaPayload.answers.push({
+        questionId: 5,
+        value: proformaFields.userIdAtResource
+      });
+    }
+
+    // Question 8: Resource -> customfield_10110
+    if (proformaFields.resourceName) {
+      proformaPayload.answers.push({
+        questionId: 8,
+        value: proformaFields.resourceName
+      });
+    }
+
+    // Question 9: Keywords -> customfield_10113
+    if (proformaFields.keywords) {
+      proformaPayload.answers.push({
+        questionId: 9,
+        value: proformaFields.keywords
+      });
+    }
+
+    // Question 13: Suggested Keyword -> customfield_10115
+    if (proformaFields.suggestedKeyword) {
+      proformaPayload.answers.push({
+        questionId: 13,
+        value: proformaFields.suggestedKeyword
+      });
+    }
+
+    console.log('| 🎯 ProForma payload:', JSON.stringify(proformaPayload, null, 2))
+
+    const proformaResponse = await fetch(formsApiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${auth}`,
+        'X-ExperimentalApi': 'opt-in'
+      },
+      body: JSON.stringify(proformaPayload)
+    });
+
+    const proformaResult = await proformaResponse.json();
+
+    if (!proformaResponse.ok) {
+      console.log('| ⚠️ ProForma submission failed:', proformaResponse.status, proformaResult)
+      throw new Error(`ProForma API error: ${proformaResponse.status} - ${JSON.stringify(proformaResult)}`)
+    } else {
+      console.log('| ✅ ProForma submission successful:', proformaResult)
+    }
+
+  } catch (error) {
+    console.error('| ❌ ProForma submission error:', error)
+    throw error
+  }
+};
+
 // Function to upload a temporary attachment
 const uploadTemporaryAttachment = async (serviceDeskId: number, attachment: {
   fileName: string;
@@ -169,6 +246,28 @@ export const handler: Handler = async (event, context) => {
         }
       } else {
         console.log('| ✅ JSM Response:', jsmResponse)
+
+        // Step 3: Try to submit ProForma fields if JSM succeeded and we have ProForma data
+        const proformaFields = {
+          userIdAtResource: userInputValues.userIdAtResource,
+          resourceName: userInputValues.resourceName,
+          keywords: userInputValues.keywords,
+          suggestedKeyword: userInputValues.suggestedKeyword
+        };
+
+        // Only attempt ProForma submission if we have at least one ProForma field with data
+        const hasProFormaData = Object.values(proformaFields).some(value => value && value !== '');
+
+        if (hasProFormaData) {
+          console.log('| 🎯 Attempting ProForma submission with fields:', proformaFields)
+          try {
+            await submitProFormaFields(serviceDeskId, requestTypeId, proformaFields, auth);
+          } catch (proformaError) {
+            console.log('| ⚠️ ProForma submission failed (JSM ticket still created):', proformaError.message)
+          }
+        } else {
+          console.log('| ℹ️ No ProForma data to submit')
+        }
       }
 
     } catch (error) {
