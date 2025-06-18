@@ -19,8 +19,10 @@ const submitProFormaFields = async (serviceDeskId: number, requestTypeId: number
   try {
     console.log('| 📝 Submitting ProForma fields...')
 
-    // Use the Forms API to submit additional fields
-    const formsApiUrl = `https://api.atlassian.com/jira/forms/cloud/${process.env.JIRA_CLOUD_ID}/servicedesk/${serviceDeskId}/requesttype/${requestTypeId}/form/submit`
+    // Try different ProForma API endpoints to find the right one
+    // Based on the form ID we discovered: 283175d3-f783-4b05-abbb-3e2cd58666d9
+    const formId = '283175d3-f783-4b05-abbb-3e2cd58666d9';
+    const formsApiUrl = `https://api.atlassian.com/jira/forms/cloud/${process.env.JIRA_CLOUD_ID}/form/${formId}/submit`
 
     // Map fields to ProForma question IDs (based on our earlier discovery)
     const proformaPayload: {
@@ -64,7 +66,8 @@ const submitProFormaFields = async (serviceDeskId: number, requestTypeId: number
       });
     }
 
-    console.log('| 🎯 ProForma payload:', JSON.stringify(proformaPayload, null, 2))
+        console.log('| 🎯 ProForma payload:', JSON.stringify(proformaPayload, null, 2))
+    console.log('| 🎯 Trying ProForma endpoint:', formsApiUrl)
 
     const proformaResponse = await fetch(formsApiUrl, {
       method: 'POST',
@@ -80,6 +83,33 @@ const submitProFormaFields = async (serviceDeskId: number, requestTypeId: number
 
     if (!proformaResponse.ok) {
       console.log('| ⚠️ ProForma submission failed:', proformaResponse.status, proformaResult)
+
+      // If 404, maybe try alternative endpoint structure
+      if (proformaResponse.status === 404) {
+        console.log('| 🔄 Trying alternative ProForma endpoint structure...')
+        const altUrl = `${process.env.JSM_BASE_URL}/rest/api/3/form/${formId}/submit`
+        console.log('| 🎯 Alternative endpoint:', altUrl)
+
+        const altResponse = await fetch(altUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Basic ${auth}`,
+            'X-ExperimentalApi': 'opt-in'
+          },
+          body: JSON.stringify(proformaPayload)
+        });
+
+        const altResult = await altResponse.json();
+
+        if (altResponse.ok) {
+          console.log('| ✅ Alternative ProForma endpoint worked:', altResult)
+          return;
+        } else {
+          console.log('| ⚠️ Alternative endpoint also failed:', altResponse.status, altResult)
+        }
+      }
+
       throw new Error(`ProForma API error: ${proformaResponse.status} - ${JSON.stringify(proformaResult)}`)
     } else {
       console.log('| ✅ ProForma submission successful:', proformaResult)
