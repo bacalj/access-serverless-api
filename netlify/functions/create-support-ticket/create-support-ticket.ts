@@ -19,11 +19,11 @@ const submitProFormaFields = async (issueKey: string, proformaFields: any, auth:
   try {
     console.log('| 📝 Submitting ProForma fields...')
 
-    // Step 1: Get the correct form ID associated with this issue
-    const getFormsUrl = `https://api.atlassian.com/jira/forms/cloud/${process.env.JIRA_CLOUD_ID}/issue/${issueKey}/form`
-    console.log('| 🔍 Getting forms for issue:', getFormsUrl)
+    // Step 1: Get the form template from the request type (Request Type 17)
+    const getFormTemplateUrl = `https://api.atlassian.com/jira/forms/cloud/${process.env.JIRA_CLOUD_ID}/servicedesk/2/requesttype/17/form`
+    console.log('| 🔍 Getting form template for request type 17:', getFormTemplateUrl)
 
-    const getFormsResponse = await fetch(getFormsUrl, {
+    const getTemplateResponse = await fetch(getFormTemplateUrl, {
       method: 'GET',
       headers: {
         'Authorization': `Basic ${auth}`,
@@ -32,31 +32,55 @@ const submitProFormaFields = async (issueKey: string, proformaFields: any, auth:
       }
     });
 
-    if (getFormsResponse.status === 404) {
-      console.log('| ℹ️ No ProForma forms found for this request type - this is normal')
-      console.log('| ℹ️ Request Type 17 (ACCESS User Support) uses traditional JSM fields only')
+    if (getTemplateResponse.status === 404) {
+      console.log('| ℹ️ No ProForma form template found for request type 17')
       return { success: true, message: 'Request type does not use ProForma forms' }
     }
 
-    if (!getFormsResponse.ok) {
-      const getFormsError = await getFormsResponse.json();
-      console.log('| ⚠️ Unexpected error getting forms:', getFormsResponse.status, getFormsError)
-      throw new Error(`Failed to get forms: ${getFormsResponse.status} - ${JSON.stringify(getFormsError)}`)
+    if (!getTemplateResponse.ok) {
+      const templateError = await getTemplateResponse.json();
+      console.log('| ⚠️ Error getting form template:', getTemplateResponse.status, templateError)
+      throw new Error(`Failed to get form template: ${getTemplateResponse.status} - ${JSON.stringify(templateError)}`)
     }
 
-    const formsData = await getFormsResponse.json();
-    console.log('| 📋 Forms associated with issue:', JSON.stringify(formsData, null, 2))
+    const templateData = await getTemplateResponse.json();
+    console.log('| 📋 Form template found:', JSON.stringify(templateData, null, 2))
 
-    // Find the correct form (should be the ProForma form)
-    if (!formsData || formsData.length === 0) {
-      throw new Error('No forms found associated with this issue')
+    const formTemplateId = templateData.id;
+    console.log('| 🎯 Using form template ID:', formTemplateId)
+
+    // Step 2: Add the form to the issue using the template
+    const addFormUrl = `https://api.atlassian.com/jira/forms/cloud/${process.env.JIRA_CLOUD_ID}/issue/${issueKey}/form`
+    console.log('| 🔗 Adding form to issue:', addFormUrl)
+
+    const addFormPayload = {
+      formTemplateId: formTemplateId
+    };
+
+    const addFormResponse = await fetch(addFormUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${auth}`,
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-ExperimentalApi': 'opt-in'
+      },
+      body: JSON.stringify(addFormPayload)
+    });
+
+    if (!addFormResponse.ok) {
+      const addFormError = await addFormResponse.json();
+      console.log('| ⚠️ Error adding form to issue:', addFormResponse.status, addFormError)
+      throw new Error(`Failed to add form to issue: ${addFormResponse.status} - ${JSON.stringify(addFormError)}`)
     }
 
-    // Use the first form (there should typically be only one ProForma form per issue)
-    const formId = formsData[0].id;
-    console.log('| 🎯 Using form ID:', formId)
+    const addedFormData = await addFormResponse.json();
+    console.log('| ✅ Form added to issue:', JSON.stringify(addedFormData, null, 2))
 
-    // Step 2: Save form answers using the correct form ID
+    const formId = addedFormData.id;
+    console.log('| 🎯 Using new form ID:', formId)
+
+    // Step 3: Save form answers using the correct form ID
     const saveAnswersUrl = `https://api.atlassian.com/jira/forms/cloud/${process.env.JIRA_CLOUD_ID}/issue/${issueKey}/form/${formId}`
 
     // Build answers object in the format expected by ProForma API
@@ -86,7 +110,7 @@ const submitProFormaFields = async (issueKey: string, proformaFields: any, auth:
     console.log('| 🎯 ProForma save answers payload:', JSON.stringify(answersPayload, null, 2))
     console.log('| 🎯 Save answers endpoint:', saveAnswersUrl)
 
-    // Step 1: Save the answers
+    // Step 3a: Save the answers
     const saveResponse = await fetch(saveAnswersUrl, {
       method: 'PUT',
       headers: {
@@ -107,7 +131,7 @@ const submitProFormaFields = async (issueKey: string, proformaFields: any, auth:
 
     console.log('| ✅ ProForma answers saved successfully')
 
-    // Step 3: Submit the form (optional - this locks the form)
+    // Step 4: Submit the form (optional - this locks the form)
     const submitUrl = `https://api.atlassian.com/jira/forms/cloud/${process.env.JIRA_CLOUD_ID}/issue/${issueKey}/form/${formId}/action/submit`
     console.log('| 🎯 Submit form endpoint:', submitUrl)
 
