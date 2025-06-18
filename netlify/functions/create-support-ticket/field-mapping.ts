@@ -67,29 +67,31 @@ const issueTypeMapping: Record<string, string> = {
 /**
  * Maps priority values to JSM format
  * @param priority The priority value from user input
- * @returns JSM-compatible priority value
+ * @returns JSM-compatible priority value object
  */
-function mapPriorityValue(priority: any): string {
+function mapPriorityValue(priority: any): { id: string } {
   if (!priority) {
-    return '3'; // Default to medium priority
+    return { id: '3' }; // Default to medium priority
   }
 
   const priorityStr = String(priority).toLowerCase();
-  return priorityMapping[priorityStr] || '3'; // Default to medium if not found
+  const priorityId = priorityMapping[priorityStr] || '3'; // Default to medium if not found
+  return { id: priorityId };
 }
 
 /**
  * Maps issue type values to JSM format for customfield_10111
  * @param issueType The issue type value from user input
- * @returns JSM-compatible issue type value ID
+ * @returns JSM-compatible issue type value object
  */
-function mapIssueTypeValue(issueType: any): string {
+function mapIssueTypeValue(issueType: any): { id: string } {
   if (!issueType) {
-    return '10214'; // Default to "User Support Question"
+    return { id: '10214' }; // Default to "User Support Question"
   }
 
   const issueTypeStr = String(issueType).toLowerCase();
-  return issueTypeMapping[issueTypeStr] || '10214'; // Default to "User Support Question" if not found
+  const issueTypeId = issueTypeMapping[issueTypeStr] || '10214'; // Default to "User Support Question" if not found
+  return { id: issueTypeId };
 }
 
 /**
