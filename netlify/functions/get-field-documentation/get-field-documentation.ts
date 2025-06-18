@@ -62,18 +62,7 @@ export const handler: Handler = async (event, context) => {
     // Setup authentication
     const auth = Buffer.from(`${process.env.JIRA_API_EMAIL}:${process.env.JIRA_API_KEY}`).toString('base64')
 
-    const documentation: FieldDocumentation = {
-      requestTypeId,
-      requestTypeName: '',
-      jsmFields: {
-        required: [],
-        optional: []
-      },
-      proformaFields: {
-        required: [],
-        optional: []
-      }
-    }
+    let requestTypeName = ''
 
     // Step 1: Get JSM request type information and fields
     console.log('📋 Fetching JSM request type information...')
@@ -88,8 +77,8 @@ export const handler: Handler = async (event, context) => {
 
     if (jsmRequestTypeResponse.ok) {
       const jsmRequestTypeData = await jsmRequestTypeResponse.json()
-      documentation.requestTypeName = jsmRequestTypeData.name || `Request Type ${requestTypeId}`
-      console.log('✅ JSM Request Type Name:', documentation.requestTypeName)
+      requestTypeName = jsmRequestTypeData.name || `Request Type ${requestTypeId}`
+      console.log('✅ JSM Request Type Name:', requestTypeName)
     }
 
     // Step 2: Get JSM fields for this request type
@@ -107,49 +96,8 @@ export const handler: Handler = async (event, context) => {
     let jsmError = null
 
     if (jsmFieldsResponse.ok) {
-      rawJsmFieldsData = await jsmFieldsResponse.json()
+            rawJsmFieldsData = await jsmFieldsResponse.json()
       console.log('✅ JSM Fields received:', rawJsmFieldsData.requestTypeFields?.length || 0, 'fields')
-
-             // Process JSM fields
-       if (rawJsmFieldsData.requestTypeFields) {
-         for (const field of rawJsmFieldsData.requestTypeFields) {
-           // Skip fields we don't need (like attachment fields that are handled separately)
-           if (field.fieldId === 'attachment') {
-             continue;
-           }
-
-           const humanField: HumanReadableField = {
-             label: field.name || field.fieldId,
-             description: cleanDescription(field.description) || `Field: ${field.name || field.fieldId}`,
-             type: mapJsmFieldType(field.jiraSchema?.type, field.jiraSchema?.custom),
-             source: 'jsm',
-             fieldId: field.fieldId,
-             required: field.required || false,
-             semanticKey: generateSemanticKey(field.name || field.fieldId, 'jsm'),
-             jiraSchema: field.jiraSchema
-           }
-
-           // Add choices for select fields (include both label and value)
-           if (field.validValues && Array.isArray(field.validValues)) {
-             humanField.choices = field.validValues
-               .map(v => ({
-                 label: v.value || v.name || String(v),
-                 value: v.id || v.value || v.name || String(v)
-               }))
-               .filter(choice => choice.label && choice.label.trim() !== '')
-           }
-
-           // Only include if it has useful information
-           if (humanField.label && humanField.label.trim() !== '') {
-             // Categorize JSM fields as required or optional
-             if (humanField.required) {
-               documentation.jsmFields.required.push(humanField)
-             } else {
-               documentation.jsmFields.optional.push(humanField)
-             }
-           }
-         }
-       }
     } else {
       console.log('❌ Failed to fetch JSM fields:', jsmFieldsResponse.status)
       try {
@@ -191,40 +139,25 @@ export const handler: Handler = async (event, context) => {
       }
     }
 
-    // Step 4: Return formatted documentation with summary
-    console.log('✅ Documentation complete!')
-    const totalJsm = documentation.jsmFields.required.length + documentation.jsmFields.optional.length
-    const totalProforma = documentation.proformaFields.required.length + documentation.proformaFields.optional.length
-    const totalRequired = documentation.jsmFields.required.length + documentation.proformaFields.required.length
-    const totalOptional = documentation.jsmFields.optional.length + documentation.proformaFields.optional.length
-
-    console.log(`- JSM fields: ${totalJsm} (${documentation.jsmFields.required.length} required, ${documentation.jsmFields.optional.length} optional)`)
-    console.log(`- ProForma fields: ${totalProforma} (${documentation.proformaFields.required.length} required, ${documentation.proformaFields.optional.length} optional)`)
-    console.log(`- Total: ${totalJsm + totalProforma} fields`)
+        // Step 4: Return simplified response with just summary and raw data
+    console.log('✅ API calls complete!')
+    console.log(`- JSM API: ${rawJsmFieldsData ? 'success' : 'failed'}`)
+    console.log(`- ProForma API: ${rawProFormaData ? 'success' : 'failed'}`)
 
     const response = {
       summary: {
         serviceDeskId,
         requestTypeId,
-        requestTypeName: documentation.requestTypeName,
-        totalFields: totalJsm + totalProforma,
-        requiredFields: totalRequired,
-        optionalFields: totalOptional,
+        requestTypeName,
         jsm: {
-          total: totalJsm,
-          required: documentation.jsmFields.required.length,
-          optional: documentation.jsmFields.optional.length,
-          apiStatus: rawJsmFieldsData ? 'success' : 'failed'
+          apiStatus: rawJsmFieldsData ? 'success' : 'failed',
+          fieldCount: rawJsmFieldsData?.requestTypeFields?.length || 0
         },
         proforma: {
-          total: totalProforma,
-          required: documentation.proformaFields.required.length,
-          optional: documentation.proformaFields.optional.length,
-          apiStatus: rawProFormaData ? 'success' : 'failed'
+          apiStatus: rawProFormaData ? 'success' : 'failed',
+          questionCount: rawProFormaData?.questions?.length || 0
         }
       },
-      documentation,
-      // RAW DATA FOR INSPECTION
       rawApiData: {
         jsm: {
           data: rawJsmFieldsData,
