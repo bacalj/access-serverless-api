@@ -127,7 +127,7 @@ export const handler: Handler = async (event, context) => {
             attachment: temporaryAttachmentIds
           })
         },
-        // raiseOnBehalfOf: userInputValues.email
+        raiseOnBehalfOf: userInputValues.email
       }
 
       // Add ProForma form section using field mapping pattern
@@ -189,7 +189,7 @@ export const handler: Handler = async (event, context) => {
         // Log success details
         const proformaCount = dataForJSM.form ? Object.keys(dataForJSM.form.answers).length : 0;
         console.log('| ✅ Request created successfully!');
-        console.log('| 🎫 Ticket:', jsmResponse.issueKey);
+        console.log('| 🎫 Ticket:', jsmResponse?.issueKey);
         console.log('| 📋 Traditional fields: populated');
         console.log('| 🎯 ProForma questions:', proformaCount, 'submitted');
         console.log('| 🔗 Check ticket for ProForma field population')
