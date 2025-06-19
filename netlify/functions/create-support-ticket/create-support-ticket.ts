@@ -12,6 +12,9 @@ interface JsmRequest {
   requestFieldValues: Record<string, any>;
   raiseOnBehalfOf?: string;
   temporaryAttachmentIds?: string[];
+  form?: {
+    answers: Record<string, any>;
+  };
 }
 
 // ProForma fields are now handled as regular custom fields in field-mapping.ts
@@ -127,6 +130,25 @@ export const handler: Handler = async (event, context) => {
         // raiseOnBehalfOf: userInputValues.email
       }
 
+      // TESTING: Add ProForma form section (Option 3 - minimal test)
+      // Based on Atlassian support article: embed form in the same request
+      if (userInputValues.userIdAtResource && userInputValues.userIdAtResource.trim() !== '') {
+        console.log('| 🧪 Adding ProForma form section (minimal test)')
+        console.log('| 🎯 Testing with userIdAtResource:', userInputValues.userIdAtResource)
+
+        dataForJSM.form = {
+          answers: {
+            "5": {
+              text: userInputValues.userIdAtResource
+            }
+          }
+        }
+
+        console.log('| 📋 Form section added:', JSON.stringify(dataForJSM.form, null, 2))
+      } else {
+        console.log('| ℹ️ No userIdAtResource provided - skipping ProForma test')
+      }
+
       // Remove the separate temporaryAttachmentIds field since we're including it in requestFieldValues
       console.log('\n| 🔄 2 data mapped and formatted for JSM:\n', dataForJSM)
 
@@ -171,11 +193,10 @@ export const handler: Handler = async (event, context) => {
           console.error('| 🔒 Authentication Error - This could indicate an expired or invalid API token')
         }
       } else {
-        console.log('| ✅ JSM Response:', jsmResponse)
+                console.log('| ✅ JSM Response:', jsmResponse)
 
-                        // Note: ProForma fields are now handled as regular custom fields in the initial request
-        // No separate API calls needed since they're mapped in field-mapping.ts
-        console.log('| ✅ All fields (including ProForma) submitted via standard JSM API')
+        // ProForma fields are now tested via embedded form section in the same request
+        console.log('| ✅ Request created - check JSM ticket for ProForma field population')
       }
 
     } catch (error) {
