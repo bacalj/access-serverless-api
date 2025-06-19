@@ -74,16 +74,28 @@ const proformaQuestionMappings: Record<number, Record<string, string>> = {
     resourceName: '8',          // Question 8: "Resource" (dropdown)
     keywords: '9',              // Question 9: "Keywords" (multi-select)
     suggestedKeyword: '13'      // Question 13: "Suggested Keyword" (text)
+  },
+  // Request Type 30: Cannot login to the ACCESS portal
+  30: {
+    identityProvider: '16',     // Question 16: "Identity Provider" (dropdown)
+    browser: '17'               // Question 17: "Browser" (multi-select)
   }
-  // Request types 30 and 31 can be added here when their ProForma structures are discovered
+  // Request Type 31: Cannot login to Resource Provider (structure TBD)
+  // 31: {
+  //   // To be added once ProForma structure is discovered
+  // }
 };
 
 // ProForma field type mappings - defines how each field should be formatted
 const proformaFieldTypes: Record<string, 'text' | 'choices'> = {
+  // Request Type 17 fields
   '5': 'text',       // userIdAtResource - text field
   '8': 'choices',    // resourceName - dropdown (single choice)
   '9': 'choices',    // keywords - multi-select (multiple choices)
-  '13': 'text'       // suggestedKeyword - text field
+  '13': 'text',      // suggestedKeyword - text field
+  // Request Type 30 fields
+  '16': 'choices',   // identityProvider - dropdown (single choice)
+  '17': 'choices'    // browser - multi-select (multiple choices)
 };
 
 /**
