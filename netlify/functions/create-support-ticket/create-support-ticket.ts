@@ -2,7 +2,7 @@ import { Handler } from '@netlify/functions'
 // @ts-ignore - handle node-fetch type issue
 import fetch from 'node-fetch'
 import FormData from 'form-data'
-import { mapFieldValues } from './field-mapping'
+import { mapFieldValues, mapProformaValues } from './field-mapping'
 
 // Define JSM request interface with flexible field values
 // mapping of specific fields to JSM keys is visible in field-mapping
@@ -130,23 +130,14 @@ export const handler: Handler = async (event, context) => {
         // raiseOnBehalfOf: userInputValues.email
       }
 
-      // TESTING: Add ProForma form section (Option 3 - minimal test)
-      // Based on Atlassian support article: embed form in the same request
-      if (userInputValues.userIdAtResource && userInputValues.userIdAtResource.trim() !== '') {
-        console.log('| 🧪 Adding ProForma form section (minimal test)')
-        console.log('| 🎯 Testing with userIdAtResource:', userInputValues.userIdAtResource)
-
-        dataForJSM.form = {
-          answers: {
-            "5": {
-              text: userInputValues.userIdAtResource
-            }
-          }
-        }
-
-        console.log('| 📋 Form section added:', JSON.stringify(dataForJSM.form, null, 2))
+      // Add ProForma form section using field mapping pattern
+      const proformaAnswers = mapProformaValues(requestTypeId, userInputValues);
+      if (proformaAnswers) {
+        dataForJSM.form = { answers: proformaAnswers };
+        console.log('| 🎯 ProForma form section added with', Object.keys(proformaAnswers).length, 'questions');
+        console.log('| 📋 Complete form section:', JSON.stringify(dataForJSM.form, null, 2));
       } else {
-        console.log('| ℹ️ No userIdAtResource provided - skipping ProForma test')
+        console.log('| ℹ️ No ProForma data provided - skipping form section');
       }
 
       // Remove the separate temporaryAttachmentIds field since we're including it in requestFieldValues
@@ -195,8 +186,13 @@ export const handler: Handler = async (event, context) => {
       } else {
                 console.log('| ✅ JSM Response:', jsmResponse)
 
-        // ProForma fields are now tested via embedded form section in the same request
-        console.log('| ✅ Request created - check JSM ticket for ProForma field population')
+        // Log success details
+        const proformaCount = dataForJSM.form ? Object.keys(dataForJSM.form.answers).length : 0;
+        console.log('| ✅ Request created successfully!');
+        console.log('| 🎫 Ticket:', jsmResponse.issueKey);
+        console.log('| 📋 Traditional fields: populated');
+        console.log('| 🎯 ProForma questions:', proformaCount, 'submitted');
+        console.log('| 🔗 Check ticket for ProForma field population')
       }
 
     } catch (error) {

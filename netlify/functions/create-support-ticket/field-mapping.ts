@@ -66,6 +66,26 @@ const issueTypeMapping: Record<string, string> = {
   '10223': '10223'
 };
 
+// ProForma question mappings for different request types
+const proformaQuestionMappings: Record<number, Record<string, string>> = {
+  // Request Type 17: Support Ticket
+  17: {
+    userIdAtResource: '5',      // Question 5: "Your User ID (at the Resource)" (text)
+    resourceName: '8',          // Question 8: "Resource" (dropdown)
+    keywords: '9',              // Question 9: "Keywords" (multi-select)
+    suggestedKeyword: '13'      // Question 13: "Suggested Keyword" (text)
+  }
+  // Request types 30 and 31 can be added here when their ProForma structures are discovered
+};
+
+// ProForma field type mappings - defines how each field should be formatted
+const proformaFieldTypes: Record<string, 'text' | 'choices'> = {
+  '5': 'text',       // userIdAtResource - text field
+  '8': 'choices',    // resourceName - dropdown (single choice)
+  '9': 'choices',    // keywords - multi-select (multiple choices)
+  '13': 'text'       // suggestedKeyword - text field
+};
+
 /**
  * Maps priority values to JSM format
  * @param priority The priority value from user input
@@ -138,4 +158,52 @@ export function mapFieldValues(requestTypeId: number, userInputValues: Record<st
   console.log(`📋 Mapped ${Object.keys(formattedFieldValues).length} fields for request type ${requestTypeId}`);
 
   return formattedFieldValues;
+}
+
+/**
+ * Maps ProForma field values to JSM form format
+ * @param requestTypeId The type of request being created
+ * @param userInputValues The values provided by the user
+ * @returns Formatted ProForma answers for JSM API form section, or null if no ProForma fields
+ */
+export function mapProformaValues(requestTypeId: number, userInputValues: Record<string, any>): Record<string, any> | null {
+  const questionMapping = proformaQuestionMappings[requestTypeId];
+
+  if (!questionMapping) {
+    // No ProForma fields for this request type
+    return null;
+  }
+
+  const formattedAnswers: Record<string, any> = {};
+  let hasProformaData = false;
+
+  Object.keys(questionMapping).forEach(fieldKey => {
+    if (userInputValues[fieldKey] !== undefined && userInputValues[fieldKey] !== '' && userInputValues[fieldKey] !== null) {
+      const questionId = questionMapping[fieldKey];
+      const fieldType = proformaFieldTypes[questionId];
+      let value = userInputValues[fieldKey];
+
+      hasProformaData = true;
+
+      if (fieldType === 'text') {
+        formattedAnswers[questionId] = { text: String(value) };
+      } else if (fieldType === 'choices') {
+        // Handle both single values and comma-separated multiple values
+        if (Array.isArray(value)) {
+          formattedAnswers[questionId] = { choices: value };
+        } else {
+          const choices = String(value).split(',').map(choice => choice.trim());
+          formattedAnswers[questionId] = { choices: choices };
+        }
+      }
+    }
+  });
+
+  if (!hasProformaData) {
+    return null;
+  }
+
+  console.log(`📝 Mapped ${Object.keys(formattedAnswers).length} ProForma fields for request type ${requestTypeId}`);
+
+  return formattedAnswers;
 }
