@@ -19,8 +19,19 @@ const submitProFormaFields = async (issueKey: string, proformaFields: any, auth:
   try {
     console.log('| 📝 Submitting ProForma fields...')
 
+    // DEBUGGING: Test multiple API approaches to see which works
+    console.log('| 🔍 Testing different API endpoints for ProForma...')
+
+    // Test 1: Cloud API approach (current approach)
+    const cloudFormTemplateUrl = `https://api.atlassian.com/jira/forms/cloud/${process.env.JIRA_CLOUD_ID}/servicedesk/2/requesttype/17/form`
+    console.log('| 🔍 Testing Cloud API - Getting form template:', cloudFormTemplateUrl)
+
+    // Test 2: Legacy API approach (ChatGPT suggestion)
+    const legacyBaseUrl = process.env.JSM_BASE_URL // Should be https://access-ci.atlassian.net
+    console.log('| 🔍 Testing Legacy API base URL:', legacyBaseUrl)
+
     // Step 1: Get the form template from the request type (Request Type 17)
-    const getFormTemplateUrl = `https://api.atlassian.com/jira/forms/cloud/${process.env.JIRA_CLOUD_ID}/servicedesk/2/requesttype/17/form`
+    const getFormTemplateUrl = cloudFormTemplateUrl
     console.log('| 🔍 Getting form template for request type 17:', getFormTemplateUrl)
 
     const getTemplateResponse = await fetch(getFormTemplateUrl, {
@@ -156,6 +167,102 @@ const submitProFormaFields = async (issueKey: string, proformaFields: any, auth:
   } catch (error) {
     console.error('| ❌ ProForma submission error:', error)
     throw error
+  }
+};
+
+// Alternative function using ChatGPT's approach (Legacy Forms API)
+const submitProFormaFieldsLegacy = async (issueKey: string, proformaFields: any, auth: string) => {
+  try {
+    console.log('| 🔄 Trying ChatGPT Legacy API approach...')
+
+    const baseUrl = process.env.JSM_BASE_URL; // https://access-ci.atlassian.net
+
+    // From the portal source, we know the form template ID is: 283175d3-f783-4b05-abbb-3e2cd58666d9
+    const formTemplateId = '283175d3-f783-4b05-abbb-3e2cd58666d9';
+
+    // Step 1: Attach form to issue (ChatGPT approach)
+    console.log('| 🔗 Attaching form using legacy API...')
+    const attachFormUrl = `${baseUrl}/rest/forms/1.0/forms`;
+
+    const attachPayload = {
+      issueKey: issueKey,
+      templateId: formTemplateId
+    };
+
+    console.log('| 🎯 Legacy attach payload:', JSON.stringify(attachPayload, null, 2));
+    console.log('| 🎯 Legacy attach URL:', attachFormUrl);
+
+    const attachResponse = await fetch(attachFormUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${auth}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(attachPayload)
+    });
+
+    console.log('| 🔍 Legacy attach response status:', attachResponse.status);
+
+    if (!attachResponse.ok) {
+      const attachError = await attachResponse.json();
+      console.log('| ⚠️ Legacy attach failed:', attachError);
+      throw new Error(`Legacy attach failed: ${JSON.stringify(attachError)}`);
+    }
+
+    const attachResult = await attachResponse.json();
+    console.log('| ✅ Legacy form attached:', JSON.stringify(attachResult, null, 2));
+
+    const formId = attachResult.id;
+
+    // Step 2: Fill form fields (ChatGPT approach)
+    console.log('| 📝 Filling form using legacy API...')
+    const fillFormUrl = `${baseUrl}/rest/forms/1.0/forms/${formId}/responses`;
+
+    // Map to legacy API format based on question IDs from portal source
+    const responses = [];
+
+    if (proformaFields.userIdAtResource) {
+      responses.push({ fieldId: '5', value: proformaFields.userIdAtResource });
+    }
+    if (proformaFields.resourceName) {
+      responses.push({ fieldId: '8', value: proformaFields.resourceName });
+    }
+    if (proformaFields.keywords) {
+      responses.push({ fieldId: '9', value: proformaFields.keywords });
+    }
+    if (proformaFields.suggestedKeyword) {
+      responses.push({ fieldId: '13', value: proformaFields.suggestedKeyword });
+    }
+
+    const fillPayload = { responses };
+
+    console.log('| 🎯 Legacy fill payload:', JSON.stringify(fillPayload, null, 2));
+    console.log('| 🎯 Legacy fill URL:', fillFormUrl);
+
+    const fillResponse = await fetch(fillFormUrl, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Basic ${auth}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(fillPayload)
+    });
+
+    console.log('| 🔍 Legacy fill response status:', fillResponse.status);
+
+    if (!fillResponse.ok) {
+      const fillError = await fillResponse.json();
+      console.log('| ⚠️ Legacy fill failed:', fillError);
+      throw new Error(`Legacy fill failed: ${JSON.stringify(fillError)}`);
+    }
+
+    console.log('| ✅ Legacy ProForma fields submitted successfully!');
+
+  } catch (error) {
+    console.error('| ❌ Legacy ProForma submission error:', error);
+    throw error;
   }
 };
 
@@ -326,13 +433,27 @@ export const handler: Handler = async (event, context) => {
         // Only attempt ProForma submission if we have at least one ProForma field with data
         const hasProFormaData = Object.values(proformaFields).some(value => value && value !== '');
 
-        if (hasProFormaData && jsmResponse?.issueKey) {
+        if (hasProFormaData && jsmResponse && 'issueKey' in jsmResponse) {
           console.log('| 🎯 Attempting ProForma submission with fields:', proformaFields)
           console.log('| 🎯 Using ticket ID:', jsmResponse.issueKey)
+
+          // Try Cloud API first
           try {
+            console.log('| 🔄 Attempting Cloud API approach...')
             await submitProFormaFields(jsmResponse.issueKey, proformaFields, auth);
-          } catch (proformaError) {
-            console.log('| ⚠️ ProForma submission failed (JSM ticket still created):', proformaError.message)
+            console.log('| ✅ Cloud API ProForma submission succeeded!')
+          } catch (cloudError) {
+            console.log('| ⚠️ Cloud API failed, trying Legacy API...', cloudError.message)
+
+            // Try Legacy API as fallback (ChatGPT approach)
+            try {
+              await submitProFormaFieldsLegacy(jsmResponse.issueKey, proformaFields, auth);
+              console.log('| ✅ Legacy API ProForma submission succeeded!')
+            } catch (legacyError) {
+              console.log('| ⚠️ Both API approaches failed (JSM ticket still created)')
+              console.log('| Cloud API error:', cloudError.message)
+              console.log('| Legacy API error:', legacyError.message)
+            }
           }
         } else {
           console.log('| ℹ️ No ProForma data to submit or missing ticket ID')
