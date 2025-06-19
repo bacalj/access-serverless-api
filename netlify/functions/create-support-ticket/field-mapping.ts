@@ -1,18 +1,15 @@
 // Define field mappings for different request types
 export const requestTypeFields: Record<number, Record<string, string>> = {
-  // Request Type: Support Ticket
+    // Request Type: Support Ticket
   17: {
     summary: 'summary',
     description: 'description',
     accessId: 'customfield_10103',
     userName: 'customfield_10108',
     issueType: 'customfield_10111',
-    priority: 'priority',
-    // ProForma fields (mapped to their underlying custom fields)
-    userIdAtResource: 'customfield_10112',     // Question 5: "Your User ID (at the Resource)"
-    resourceName: 'customfield_10110',         // Question 8: "Resource"
-    keywords: 'customfield_10113',             // Question 9: "Keywords"
-    suggestedKeyword: 'customfield_10115'      // Question 13: "Suggested Keyword"
+    priority: 'priority'
+    // ProForma fields are now handled via embedded form section, not traditional mapping
+    // userIdAtResource, resourceName, keywords, suggestedKeyword excluded from traditional mapping
   },
   // Request Type: Login to Access (loginAccess)
   30: {
