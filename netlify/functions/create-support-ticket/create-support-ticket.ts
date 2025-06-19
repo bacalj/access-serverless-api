@@ -127,7 +127,11 @@ export const handler: Handler = async (event, context) => {
             attachment: temporaryAttachmentIds
           })
         },
-        raiseOnBehalfOf: userInputValues.email
+        // this (raiseOnBehalfOf) only works on dev instance becuase its an admin submitting ticket
+        // in prod, I get error
+        // "jsmResponse":{"errorMessage":"You do not have permission to create requests on behalf of other users.",
+        // "i18nErrorMessage":{"i18nKey":"sd.request.create.error.permission.onbehalfof","parameters":[]}}}
+        // raiseOnBehalfOf: userInputValues.email
       }
 
       // Add ProForma form section using field mapping pattern
