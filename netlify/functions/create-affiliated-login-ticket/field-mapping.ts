@@ -2,7 +2,7 @@
 export const requestTypeFields: Record<number, Record<string, string>> = {
   // Request Type: Login to provider (loginProvider)
   31: {
-    userName: 'customfield_10108',
+    name: 'customfield_10108',
     accessId: 'customfield_10103',
     accessResource: 'customfield_10110',
     description: 'description'

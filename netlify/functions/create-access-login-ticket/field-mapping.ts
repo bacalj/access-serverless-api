@@ -2,7 +2,7 @@
 export const requestTypeFields: Record<number, Record<string, string>> = {
   // Request Type: Login to Access
   30: {
-    userName: 'customfield_10108',
+    name: 'customfield_10108',
     accessId: 'customfield_10103',
     description: 'description'
   }

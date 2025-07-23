@@ -5,7 +5,7 @@ export const requestTypeFields: Record<number, Record<string, string>> = {
     summary: 'summary',
     description: 'description',
     accessId: 'customfield_10103',
-    userName: 'customfield_10108',
+    name: 'customfield_10108',
     issueType: 'customfield_10111',
     priority: 'priority'
     // ProForma fields are now handled via embedded form section, not traditional mapping
@@ -13,13 +13,13 @@ export const requestTypeFields: Record<number, Record<string, string>> = {
   },
   // Request Type: Login to Access (loginAccess)
   30: {
-    userName: 'customfield_10108',
+    name: 'customfield_10108',
     accessId: 'customfield_10103',
     description: 'description'
   },
   // Request Type: Login to provider (loginProvider)
   31: {
-    userName: 'customfield_10108',
+    name: 'customfield_10108',
     accessId: 'customfield_10103',
     accessResource: 'customfield_10110',
     description: 'description'
